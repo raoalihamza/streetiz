@@ -1,0 +1,578 @@
+import { useState, useEffect } from 'react';
+import {
+  Plus, MessageSquare, ShoppingBag, Briefcase, FileText, MapPin, ChevronDown,
+  Search, Users as UsersIcon, Home, TrendingUp, MessageCircle
+} from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
+import FeedPost from '../components/FeedPost';
+import SeedDataButton from '../components/SeedDataButton';
+import MemberSearch from '../components/MemberSearch';
+import ProfilePage from './ProfilePage';
+import CreateContentModal from '../components/CreateContentModal';
+import ChatWindow from '../components/ChatWindow';
+
+interface CommunityPageProps {
+  onNavigate: (page: string) => void;
+}
+
+interface Profile {
+  id: string;
+  username: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  online_status?: string;
+}
+
+interface Post {
+  id: string;
+  user_id: string;
+  post_type: string;
+  content: string | null;
+  media_url?: string | null;
+  media_urls?: string[];
+  youtube_url?: string | null;
+  tiktok_url?: string | null;
+  audio_title?: string | null;
+  audio_artist?: string | null;
+  audio_url?: string | null;
+  audio_cover_url?: string | null;
+  article_title?: string | null;
+  article_link?: string | null;
+  article_image_url?: string | null;
+  tags: string[];
+  category?: string | null;
+  likes_count: number;
+  comments_count: number;
+  shares_count: number;
+  saves_count: number;
+  created_at: string;
+  profiles: Profile;
+  user_liked?: boolean;
+  user_saved?: boolean;
+}
+
+interface Friend {
+  id: string;
+  username: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  online_status: string;
+}
+
+type CategoryType = 'posts' | 'forum' | 'marketplace' | 'casting' | 'announcements' | 'members';
+type FeedTab = 'global' | 'following';
+
+export default function CommunityPage({ onNavigate }: CommunityPageProps) {
+  const { user } = useAuth();
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [friends, setFriends] = useState<Friend[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState<CategoryType>('posts');
+  const [selectedFeedTab, setSelectedFeedTab] = useState<FeedTab>('global');
+  const [showCreateMenu, setShowCreateMenu] = useState(false);
+  const [createModalType, setCreateModalType] = useState<'post' | 'forum' | 'announcement' | 'marketplace' | 'workshop' | null>(null);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [openChats, setOpenChats] = useState<Array<{ id: string; name: string; avatar: string | null }>>([]);
+
+  useEffect(() => {
+    if (selectedCategory === 'posts') {
+      loadPosts();
+    }
+    if (user) {
+      loadFriends();
+    }
+  }, [user, selectedCategory, selectedFeedTab]);
+
+  const loadPosts = async () => {
+    setLoading(true);
+    try {
+      let query = supabase
+        .from('posts')
+        .select(`
+          *,
+          profiles (id, username, display_name, avatar_url)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (selectedFeedTab === 'following' && user) {
+        const { data: followsData } = await supabase
+          .from('user_follows')
+          .select('following_id')
+          .eq('follower_id', user.id);
+
+        const followingIds = (followsData || []).map((f: any) => f.following_id);
+        if (followingIds.length > 0) {
+          query = query.in('user_id', followingIds);
+        } else {
+          setPosts([]);
+          setLoading(false);
+          return;
+        }
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      if (user) {
+        const postIds = (data || []).map((p: any) => p.id);
+
+        const { data: likes } = await supabase
+          .from('post_likes')
+          .select('post_id')
+          .eq('user_id', user.id)
+          .in('post_id', postIds);
+
+        const { data: saves } = await supabase
+          .from('post_saves')
+          .select('post_id')
+          .eq('user_id', user.id)
+          .in('post_id', postIds);
+
+        const likedPostIds = new Set((likes || []).map((l: any) => l.post_id));
+        const savedPostIds = new Set((saves || []).map((s: any) => s.post_id));
+
+        setPosts((data || []).map((p: any) => ({
+          ...p,
+          user_liked: likedPostIds.has(p.id),
+          user_saved: savedPostIds.has(p.id)
+        })));
+      } else {
+        setPosts(data || []);
+      }
+    } catch (error) {
+      console.error('Error loading posts:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadFriends = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('friendships')
+        .select(`
+          friend_id,
+          profiles!friendships_friend_id_fkey (
+            id, username, display_name, avatar_url,
+            profile_extensions (online_status)
+          )
+        `)
+        .eq('user_id', user.id)
+        .eq('status', 'accepted')
+        .limit(10);
+
+      if (error) throw error;
+
+      const formattedFriends = (data || []).map((f: any) => ({
+        id: f.profiles.id,
+        username: f.profiles.username,
+        display_name: f.profiles.display_name,
+        avatar_url: f.profiles.avatar_url,
+        online_status: f.profiles.profile_extensions?.[0]?.online_status || 'offline'
+      }));
+
+      setFriends(formattedFriends);
+    } catch (error) {
+      console.error('Error loading friends:', error);
+    }
+  };
+
+  const handleLike = async (postId: string) => {
+    if (!user) return;
+
+    try {
+      const post = posts.find(p => p.id === postId);
+      if (!post) return;
+
+      if (post.user_liked) {
+        await supabase
+          .from('post_likes')
+          .delete()
+          .eq('post_id', postId)
+          .eq('user_id', user.id);
+
+        await supabase.rpc('decrement_post_likes', { post_id: postId });
+      } else {
+        await supabase
+          .from('post_likes')
+          .insert({ post_id: postId, user_id: user.id });
+
+        await supabase.rpc('increment_post_likes', { post_id: postId });
+      }
+
+      setPosts(posts.map(p =>
+        p.id === postId
+          ? { ...p, user_liked: !p.user_liked, likes_count: p.likes_count + (p.user_liked ? -1 : 1) }
+          : p
+      ));
+    } catch (error) {
+      console.error('Error toggling like:', error);
+      await loadPosts();
+    }
+  };
+
+  const handleSave = async (postId: string) => {
+    if (!user) return;
+
+    try {
+      const post = posts.find(p => p.id === postId);
+      if (!post) return;
+
+      if (post.user_saved) {
+        await supabase
+          .from('post_saves')
+          .delete()
+          .eq('post_id', postId)
+          .eq('user_id', user.id);
+      } else {
+        await supabase
+          .from('post_saves')
+          .insert({ post_id: postId, user_id: user.id });
+      }
+
+      setPosts(posts.map(p =>
+        p.id === postId ? { ...p, user_saved: !p.user_saved } : p
+      ));
+    } catch (error) {
+      console.error('Error toggling save:', error);
+    }
+  };
+
+  const handleComment = (postId: string) => {
+    console.log('Comment on post:', postId);
+  };
+
+  const handleShare = (postId: string) => {
+    console.log('Share post:', postId);
+  };
+
+  const handleOpenChat = (userId: string, username: string, avatar: string | null) => {
+    if (!openChats.find(chat => chat.id === userId)) {
+      setOpenChats([...openChats, { id: userId, name: username, avatar }]);
+    }
+  };
+
+  const handleCloseChat = (userId: string) => {
+    setOpenChats(openChats.filter(chat => chat.id !== userId));
+  };
+
+  const categories = [
+    { id: 'posts' as CategoryType, label: 'Posts', icon: Home, badge: 0 },
+    { id: 'forum' as CategoryType, label: 'Forum', icon: MessageSquare, badge: 5 },
+    { id: 'marketplace' as CategoryType, label: 'Marketplace', icon: ShoppingBag, badge: 12 },
+    { id: 'casting' as CategoryType, label: 'Casting & Jobs', icon: Briefcase, badge: 3 },
+    { id: 'announcements' as CategoryType, label: 'Announcements', icon: FileText, badge: 8 },
+    { id: 'members' as CategoryType, label: 'Members', icon: UsersIcon, badge: 0 },
+  ];
+
+  const createActions = [
+    { id: 'post', label: 'Create Post', icon: FileText },
+    { id: 'forum', label: 'Forum Topic', icon: MessageSquare },
+    { id: 'announcement', label: 'Announcement', icon: TrendingUp },
+    { id: 'marketplace', label: 'Marketplace Item', icon: ShoppingBag },
+    { id: 'workshop', label: 'Workshop', icon: Briefcase },
+  ];
+
+  return (
+    <div className="min-h-screen bg-[#0D0D0D] pt-20">
+      <div className="max-w-[1800px] mx-auto px-4 lg:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] xl:grid-cols-[300px_1fr_340px] gap-6">
+
+          {/* LEFT SIDEBAR */}
+          <aside className="hidden lg:block">
+            <div className="sticky top-24 space-y-4">
+              <div className="bg-[#111] rounded-2xl border border-[#222] overflow-hidden">
+                <div className="p-4">
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowCreateMenu(!showCreateMenu)}
+                      className="w-full bg-streetiz-red hover:bg-red-600 text-white font-black py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors"
+                    >
+                      <Plus className="w-5 h-5" />
+                      CRÉER
+                      <ChevronDown className={`w-4 h-4 ml-auto transition-transform ${showCreateMenu ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    {showCreateMenu && (
+                      <div className="absolute top-full left-0 right-0 mt-2 bg-[#0a0a0a] border border-[#222] rounded-xl overflow-hidden shadow-xl z-10">
+                        {createActions.map((action) => {
+                          const Icon = action.icon;
+                          return (
+                            <button
+                              key={action.id}
+                              onClick={() => {
+                                setCreateModalType(action.id as any);
+                                setShowCreateMenu(false);
+                              }}
+                              className="w-full flex items-center gap-3 px-4 py-3 text-white hover:bg-[#1a1a1a] transition-colors"
+                            >
+                              <Icon className="w-4 h-4 text-streetiz-red" />
+                              <span className="text-sm font-semibold">{action.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-[#111] rounded-2xl border border-[#222] overflow-hidden">
+                <div className="p-4 border-b border-[#222]">
+                  <h3 className="text-white font-black text-sm uppercase">Categories</h3>
+                </div>
+                <div className="p-2">
+                  {categories.map((cat) => {
+                    const Icon = cat.icon;
+                    return (
+                      <button
+                        key={cat.id}
+                        onClick={() => setSelectedCategory(cat.id)}
+                        className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl transition-all ${
+                          selectedCategory === cat.id
+                            ? 'bg-streetiz-red text-white'
+                            : 'text-[#888] hover:bg-[#1a1a1a] hover:text-white'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <Icon className="w-5 h-5" />
+                          <span className="text-sm font-semibold">{cat.label}</span>
+                        </div>
+                        {cat.badge > 0 && (
+                          <span className="bg-streetiz-red text-white text-xs font-bold px-2 py-1 rounded-full min-w-[20px] text-center">
+                            {cat.badge}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {selectedCategory === 'members' && <MemberSearch onViewProfile={setSelectedUserId} />}
+            </div>
+          </aside>
+
+          {/* MAIN FEED */}
+          <main className="min-h-screen">
+            <div className="mb-6">
+              <h1 className="text-4xl md:text-5xl font-black mb-2">
+                <span className="text-white">LA </span>
+                <span className="text-streetiz-red drop-shadow-[0_0_20px_rgba(239,68,68,0.5)]">COMMUNAUTÉ</span>
+              </h1>
+              <p className="text-[#888] text-lg">
+                {selectedCategory === 'posts' ? 'Fil d\'actualité' :
+                 selectedCategory === 'forum' ? 'Forum discussions' :
+                 selectedCategory === 'marketplace' ? 'Acheter et vendre' :
+                 selectedCategory === 'casting' ? 'Opportunités et jobs' :
+                 selectedCategory === 'announcements' ? 'Annonces' :
+                 'Rechercher des membres'}
+              </p>
+            </div>
+
+            {selectedCategory === 'posts' && (
+              <>
+                <div className="flex items-center gap-2 mb-6 bg-[#111] rounded-xl p-1 border border-[#222] w-fit">
+                  <button
+                    onClick={() => setSelectedFeedTab('global')}
+                    className={`px-6 py-2.5 rounded-lg font-bold text-sm transition-all ${
+                      selectedFeedTab === 'global'
+                        ? 'bg-streetiz-red text-white'
+                        : 'text-[#888] hover:text-white'
+                    }`}
+                  >
+                    Feed Principal
+                  </button>
+                  <button
+                    onClick={() => setSelectedFeedTab('following')}
+                    className={`px-6 py-2.5 rounded-lg font-bold text-sm transition-all ${
+                      selectedFeedTab === 'following'
+                        ? 'bg-streetiz-red text-white'
+                        : 'text-[#888] hover:text-white'
+                    }`}
+                  >
+                    Mes Abonnements
+                  </button>
+                </div>
+
+                {loading ? (
+                  <div className="flex justify-center py-12">
+                    <div className="w-12 h-12 border-4 border-streetiz-red/20 border-t-streetiz-red rounded-full animate-spin" />
+                  </div>
+                ) : posts.length === 0 ? (
+                  <div className="bg-[#111] rounded-2xl border border-[#222] p-12 text-center">
+                    <Home className="w-16 h-16 text-[#333] mx-auto mb-4" />
+                    <h3 className="text-white font-black text-2xl mb-3">
+                      {selectedFeedTab === 'following' ? 'Aucun post de vos abonnements' : 'Aucun post pour le moment'}
+                    </h3>
+                    <p className="text-[#666] mb-6">
+                      {selectedFeedTab === 'following'
+                        ? 'Suivez des membres pour voir leurs posts ici!'
+                        : 'Soyez le premier à partager du contenu!'}
+                    </p>
+                    {user && (
+                      <button
+                        onClick={() => setCreateModalType('post')}
+                        className="bg-streetiz-red hover:bg-red-600 text-white font-bold py-3 px-6 rounded-full transition-colors"
+                      >
+                        Créer un post
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {posts.map((post) => (
+                      <FeedPost
+                        key={post.id}
+                        post={post}
+                        onLike={handleLike}
+                        onComment={handleComment}
+                        onShare={handleShare}
+                        onSave={handleSave}
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+
+            {selectedCategory === 'members' && (
+              <div className="bg-[#111] rounded-2xl border border-[#222] p-8 text-center">
+                <UsersIcon className="w-16 h-16 text-[#333] mx-auto mb-4" />
+                <h3 className="text-white font-black text-2xl mb-3">Rechercher des membres</h3>
+                <p className="text-[#666]">Utilisez la recherche dans la sidebar pour trouver des membres</p>
+              </div>
+            )}
+
+            {selectedCategory !== 'posts' && selectedCategory !== 'members' && (
+              <div className="bg-[#111] rounded-2xl border border-[#222] p-12 text-center">
+                <FileText className="w-16 h-16 text-[#333] mx-auto mb-4" />
+                <h3 className="text-white font-black text-2xl mb-3">Bientôt disponible</h3>
+                <p className="text-[#666] mb-6">Cette section est en cours de développement</p>
+              </div>
+            )}
+          </main>
+
+          {/* RIGHT SIDEBAR */}
+          <aside className="hidden xl:block">
+            <div className="sticky top-24 space-y-4">
+              <div className="bg-[#111] rounded-2xl border border-[#222] overflow-hidden">
+                <div className="p-4 border-b border-[#222] flex items-center justify-between">
+                  <h3 className="text-white font-black text-sm uppercase">Amis</h3>
+                  {user && friends.length > 0 && (
+                    <span className="bg-green-500/20 text-green-400 text-xs font-bold px-2 py-1 rounded-full">
+                      {friends.filter(f => f.online_status === 'online').length} en ligne
+                    </span>
+                  )}
+                </div>
+
+                <div className="max-h-[600px] overflow-y-auto">
+                  {!user ? (
+                    <div className="p-6 text-center">
+                      <UsersIcon className="w-12 h-12 text-[#333] mx-auto mb-3" />
+                      <p className="text-[#666] text-sm mb-4">Connectez-vous pour voir vos amis</p>
+                      <button
+                        onClick={() => onNavigate('login')}
+                        className="bg-streetiz-red hover:bg-red-600 text-white font-bold py-2 px-4 rounded-full text-sm transition-all"
+                      >
+                        Se connecter
+                      </button>
+                    </div>
+                  ) : friends.length === 0 ? (
+                    <div className="p-6 text-center">
+                      <UsersIcon className="w-12 h-12 text-[#333] mx-auto mb-3" />
+                      <p className="text-[#666] text-sm">Aucun ami pour le moment</p>
+                    </div>
+                  ) : (
+                    <div className="p-2">
+                      {friends
+                        .sort((a, b) => {
+                          if (a.online_status === 'online' && b.online_status !== 'online') return -1;
+                          if (a.online_status !== 'online' && b.online_status === 'online') return 1;
+                          return 0;
+                        })
+                        .map((friend) => (
+                          <div
+                            key={friend.id}
+                            className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#1a1a1a] transition-colors group"
+                          >
+                            <button
+                              onClick={() => setSelectedUserId(friend.id)}
+                              className="relative flex-shrink-0"
+                            >
+                              <img
+                                src={friend.avatar_url || `https://ui-avatars.com/api/?name=${friend.username}&background=ef4444&color=fff&size=40`}
+                                alt={friend.username}
+                                className="w-10 h-10 rounded-full object-cover"
+                              />
+                              {friend.online_status === 'online' && (
+                                <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[#111] rounded-full" />
+                              )}
+                            </button>
+                            <button
+                              onClick={() => setSelectedUserId(friend.id)}
+                              className="flex-1 text-left"
+                            >
+                              <p className="text-white text-sm font-semibold truncate">
+                                {friend.display_name || friend.username}
+                              </p>
+                              <p className="text-[#666] text-xs">@{friend.username}</p>
+                            </button>
+                            <button
+                              onClick={() => handleOpenChat(friend.id, friend.display_name || friend.username, friend.avatar_url)}
+                              className="opacity-0 group-hover:opacity-100 w-8 h-8 bg-streetiz-red hover:bg-red-600 rounded-full flex items-center justify-center transition-all"
+                              title="Message"
+                            >
+                              <MessageCircle className="w-4 h-4 text-white" />
+                            </button>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </div>
+
+      {createModalType && (
+        <CreateContentModal
+          initialType={createModalType}
+          onClose={() => setCreateModalType(null)}
+          onSuccess={() => {
+            if (selectedCategory === 'posts') {
+              loadPosts();
+            }
+          }}
+        />
+      )}
+
+      {selectedUserId && (
+        <ProfilePage
+          profileId={selectedUserId}
+          onClose={() => setSelectedUserId(null)}
+          onOpenChat={handleOpenChat}
+        />
+      )}
+
+      {openChats.map((chat, index) => (
+        <div key={chat.id} style={{ right: `${20 + index * 420}px` }} className="fixed bottom-0 z-40">
+          <ChatWindow
+            recipientId={chat.id}
+            recipientName={chat.name}
+            recipientAvatar={chat.avatar}
+            onClose={() => handleCloseChat(chat.id)}
+          />
+        </div>
+      ))}
+
+      <SeedDataButton />
+    </div>
+  );
+}
