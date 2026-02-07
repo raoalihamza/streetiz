@@ -1,22 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Music2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import MusicSpotlight from '../components/MusicSpotlight';
+import DJSetsLive from '../components/DJSetsLive';
 import MusicCarousel from '../components/MusicCarousel';
 import ExploreFeedBlock from '../components/ExploreFeedBlock';
 import MusicSidebar from '../components/MusicSidebar';
 import ModalPlayer from '../components/ModalPlayer';
-
-interface Spotlight {
-  id: string;
-  title: string;
-  subtitle: string;
-  cover_url: string;
-  tags: string[];
-  external_url?: string;
-  content_type: string;
-  content_id?: string;
-}
 
 interface Track {
   id: string;
@@ -52,6 +41,8 @@ interface DJSet {
   video_url?: string;
   audio_url?: string;
   description: string;
+  event?: string;
+  location?: string;
 }
 
 interface Article {
@@ -78,8 +69,10 @@ interface FeedItem {
   artist?: string;
   coverUrl: string;
   tags?: string[];
+  platform?: string;
   duration?: number;
   description?: string;
+  isVideo?: boolean;
   onPlay?: () => void;
   onDownload?: () => void;
   externalUrl?: string;
@@ -87,7 +80,6 @@ interface FeedItem {
 
 export default function MusicPage() {
   const [loading, setLoading] = useState(true);
-  const [spotlight, setSpotlight] = useState<Spotlight | null>(null);
   const [newReleases, setNewReleases] = useState<PlatformRelease[]>([]);
   const [remixes, setRemixes] = useState<Track[]>([]);
   const [freeDownloads, setFreeDownloads] = useState<Track[]>([]);
@@ -98,6 +90,7 @@ export default function MusicPage() {
   const [beatportChart, setBeatportChart] = useState<Track[]>([]);
   const [streetizChart, setStreetizChart] = useState<Track[]>([]);
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
+  const [originalFeedItems, setOriginalFeedItems] = useState<FeedItem[]>([]);
 
   const [selectedModal, setSelectedModal] = useState<{
     title: string;
@@ -115,33 +108,24 @@ export default function MusicPage() {
     setLoading(true);
     try {
       const [
-        spotlightData,
         tracksData,
         releasesData,
         djSetsData,
         articlesData,
         podcastsData,
       ] = await Promise.all([
-        supabase
-          .from('music_spotlights')
-          .select('*')
-          .eq('is_active', true)
-          .order('priority', { ascending: false })
-          .limit(1)
-          .maybeSingle(),
         supabase.from('music_tracks').select('*').order('created_at', { ascending: false }),
-        supabase.from('music_platform_releases').select('*').order('release_date', { ascending: false }).limit(20),
+        supabase.from('music_platform_releases').select('*').order('release_date', { ascending: false }).limit(15),
         supabase.from('music_dj_sets').select('*').order('created_at', { ascending: false }).limit(12),
         supabase.from('music_articles').select('*').order('created_at', { ascending: false }).limit(10),
         supabase.from('music_podcasts').select('*').order('published_at', { ascending: false }).limit(10),
       ]);
 
-      if (spotlightData.data) setSpotlight(spotlightData.data);
       if (tracksData.data) {
         const tracks = tracksData.data;
         setAllTracks(tracks);
-        setRemixes(tracks.filter((t) => t.is_remix).slice(0, 20));
-        setFreeDownloads(tracks.filter((t) => t.is_free_download).slice(0, 20));
+        setRemixes(tracks.filter((t) => t.is_remix).slice(0, 15));
+        setFreeDownloads(tracks.filter((t) => t.is_free_download).slice(0, 15));
         setBeatportChart(tracks.slice(0, 10));
         setStreetizChart(tracks.slice(10, 20));
       }
@@ -150,7 +134,13 @@ export default function MusicPage() {
       if (articlesData.data) setArticles(articlesData.data);
       if (podcastsData.data) setPodcasts(podcastsData.data);
 
-      buildFeedItems(tracksData.data || [], djSetsData.data || [], articlesData.data || [], podcastsData.data || []);
+      buildFeedItems(
+        tracksData.data || [],
+        releasesData.data || [],
+        djSetsData.data || [],
+        articlesData.data || [],
+        podcastsData.data || []
+      );
     } catch (error) {
       console.error('Error loading music content:', error);
     } finally {
@@ -158,8 +148,32 @@ export default function MusicPage() {
     }
   };
 
-  const buildFeedItems = (tracks: Track[], djSets: DJSet[], articles: Article[], podcasts: Podcast[]) => {
+  const buildFeedItems = (
+    tracks: Track[],
+    releases: PlatformRelease[],
+    djSets: DJSet[],
+    articles: Article[],
+    podcasts: Podcast[]
+  ) => {
     const items: FeedItem[] = [];
+
+    releases.forEach((release) => {
+      items.push({
+        id: release.id,
+        type: 'track',
+        title: release.title,
+        artist: release.artist,
+        coverUrl: release.cover_url,
+        tags: release.is_new ? ['NEW', ...release.genres.slice(0, 1)] : release.genres.slice(0, 1),
+        platform: release.platform,
+        externalUrl: release.external_url,
+        onPlay: () => {
+          if (release.external_url) {
+            window.open(release.external_url, '_blank');
+          }
+        },
+      });
+    });
 
     tracks.forEach((track) => {
       items.push({
@@ -172,6 +186,7 @@ export default function MusicPage() {
           track.is_remix ? 'REMIX' : track.is_free_download ? 'FREE DL' : 'TRACK',
           track.genre,
         ],
+        platform: track.platform || 'SoundCloud',
         duration: track.duration,
         onPlay: () => handlePlayTrack(track.id),
         onDownload: track.is_free_download ? () => {} : undefined,
@@ -187,7 +202,9 @@ export default function MusicPage() {
         artist: djSet.artist,
         coverUrl: djSet.cover_url,
         tags: ['DJ SET'],
+        platform: djSet.video_url ? 'YouTube' : 'SoundCloud',
         description: djSet.description,
+        isVideo: !!djSet.video_url,
         onPlay: () => handlePlayDJSet(djSet),
       });
     });
@@ -212,6 +229,7 @@ export default function MusicPage() {
         artist: podcast.host,
         coverUrl: podcast.cover_url,
         tags: ['PODCAST'],
+        platform: 'SoundCloud',
         duration: podcast.duration,
         description: podcast.description,
         onPlay: () => handlePlayPodcast(podcast),
@@ -219,6 +237,7 @@ export default function MusicPage() {
     });
 
     setFeedItems(items);
+    setOriginalFeedItems(items);
   };
 
   const handlePlayTrack = (trackId: string) => {
@@ -252,13 +271,13 @@ export default function MusicPage() {
   };
 
   const handleFilterChange = (filters: any) => {
-    let filtered = [...feedItems];
+    let filtered = [...originalFeedItems];
 
-    if (filters.tab !== 'General Feed') {
+    if (filters.tab !== 'All') {
       const typeMap: Record<string, string[]> = {
-        'New Releases': ['track'],
+        'New': ['track'],
         'Remixes': ['remix'],
-        'Free Downloads': ['free_download'],
+        'Free DL': ['free_download'],
         'DJ Sets': ['dj_set'],
         'Podcasts': ['podcast'],
         'Articles': ['article'],
@@ -274,6 +293,18 @@ export default function MusicPage() {
         (item) =>
           item.title.toLowerCase().includes(query) ||
           (item.artist && item.artist.toLowerCase().includes(query))
+      );
+    }
+
+    if (filters.genres.length > 0) {
+      filtered = filtered.filter((item) =>
+        item.tags?.some((tag) => filters.genres.includes(tag))
+      );
+    }
+
+    if (filters.platforms.length > 0) {
+      filtered = filtered.filter((item) =>
+        item.platform && filters.platforms.includes(item.platform)
       );
     }
 
@@ -297,125 +328,32 @@ export default function MusicPage() {
             <span className="text-streetiz-red text-sm font-bold">MUSIC</span>
           </div>
           <h1 className="text-5xl md:text-7xl font-black mb-3">
-            <span className="text-white">STREET</span>
+            <span className="text-white">STREETIZ </span>
             <span className="text-streetiz-red drop-shadow-[0_0_20px_rgba(239,68,68,0.5)]">
               MUSIC
             </span>
           </h1>
           <p className="text-xl text-gray-400">
-            Your ultimate hub for electro, house, and street dance music
+            Electronic music, DJ sets, and street culture
           </p>
         </div>
 
         <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8">
-          {spotlight && (
-            <div className="mb-12">
-              <MusicSpotlight
-                title={spotlight.title}
-                subtitle={spotlight.subtitle}
-                coverUrl={spotlight.cover_url}
-                tags={spotlight.tags}
-                externalUrl={spotlight.external_url}
-                onPlayPreview={() => {
-                  if (spotlight.content_id) {
-                    handlePlayTrack(spotlight.content_id);
-                  }
-                }}
-                onViewExternal={() => {
-                  if (spotlight.external_url) {
-                    window.open(spotlight.external_url, '_blank');
-                  }
-                }}
-              />
-            </div>
+          {djSets.length > 0 && (
+            <DJSetsLive
+              sets={djSets.slice(0, 8).map((djSet) => ({
+                id: djSet.id,
+                title: djSet.title,
+                artist: djSet.artist,
+                thumbnailUrl: djSet.cover_url,
+                videoUrl: djSet.video_url || djSet.audio_url || '',
+                event: djSet.event,
+                location: djSet.location,
+                tags: ['LIVE', 'DJ SET', 'FILMED'],
+                onPlay: () => handlePlayDJSet(djSet),
+              }))}
+            />
           )}
-
-          <div className="space-y-12 mb-12">
-            {newReleases.length > 0 && (
-              <MusicCarousel
-                title="New Electro of the Week"
-                items={newReleases.map((release) => ({
-                  id: release.id,
-                  title: release.title,
-                  artist: release.artist,
-                  coverUrl: release.cover_url,
-                  tags: release.is_new ? ['NEW', ...release.genres.slice(0, 1)] : release.genres.slice(0, 2),
-                  platforms: [release.platform],
-                  externalUrl: release.external_url,
-                }))}
-                onPlayItem={(id) => {
-                  const release = newReleases.find((r) => r.id === id);
-                  if (release?.external_url) {
-                    window.open(release.external_url, '_blank');
-                  }
-                }}
-              />
-            )}
-
-            {remixes.length > 0 && (
-              <MusicCarousel
-                title="Remixes of the Week"
-                items={remixes.map((track) => ({
-                  id: track.id,
-                  title: track.title,
-                  artist: track.artist,
-                  coverUrl: track.cover_url,
-                  tags: ['REMIX', track.genre],
-                  platforms: track.platform ? [track.platform] : [],
-                  hasDownload: track.is_free_download,
-                  externalUrl: track.external_platform_url,
-                }))}
-                onPlayItem={handlePlayTrack}
-              />
-            )}
-
-            {freeDownloads.length > 0 && (
-              <MusicCarousel
-                title="Free Downloads"
-                items={freeDownloads.map((track) => ({
-                  id: track.id,
-                  title: track.title,
-                  artist: track.artist,
-                  coverUrl: track.cover_url,
-                  tags: ['FREE DL', track.genre],
-                  hasDownload: true,
-                  platforms: track.platform ? [track.platform] : [],
-                }))}
-                onPlayItem={handlePlayTrack}
-              />
-            )}
-
-            {djSets.length > 0 && (
-              <MusicCarousel
-                title="DJ Sets & Live Videos"
-                items={djSets.slice(0, 8).map((djSet) => ({
-                  id: djSet.id,
-                  title: djSet.title,
-                  artist: djSet.artist,
-                  coverUrl: djSet.cover_url,
-                  tags: ['DJ SET'],
-                }))}
-                onPlayItem={(id) => {
-                  const djSet = djSets.find((d) => d.id === id);
-                  if (djSet) handlePlayDJSet(djSet);
-                }}
-              />
-            )}
-
-            {articles.length > 0 && (
-              <MusicCarousel
-                title="Articles & Interviews"
-                items={articles.slice(0, 8).map((article) => ({
-                  id: article.id,
-                  title: article.title,
-                  artist: '',
-                  coverUrl: article.cover_url,
-                  tags: ['ARTICLE'],
-                }))}
-                onPlayItem={() => {}}
-              />
-            )}
-          </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-8">
             <div>
@@ -423,6 +361,66 @@ export default function MusicPage() {
                 feedItems={feedItems}
                 onFilterChange={handleFilterChange}
               />
+
+              <div className="mt-12 space-y-8">
+                {newReleases.length > 0 && (
+                  <div className="bg-[#0A0A0A] rounded-2xl p-6">
+                    <MusicCarousel
+                      title="New Electro of the Week"
+                      items={newReleases.slice(0, 10).map((release) => ({
+                        id: release.id,
+                        title: release.title,
+                        artist: release.artist,
+                        coverUrl: release.cover_url,
+                        tags: release.is_new ? ['NEW'] : [],
+                        platforms: [release.platform],
+                        externalUrl: release.external_url,
+                      }))}
+                      onPlayItem={(id) => {
+                        const release = newReleases.find((r) => r.id === id);
+                        if (release?.external_url) {
+                          window.open(release.external_url, '_blank');
+                        }
+                      }}
+                    />
+                  </div>
+                )}
+
+                {remixes.length > 0 && (
+                  <div className="bg-[#0A0A0A] rounded-2xl p-6">
+                    <MusicCarousel
+                      title="Remixes of the Week"
+                      items={remixes.slice(0, 10).map((track) => ({
+                        id: track.id,
+                        title: track.title,
+                        artist: track.artist,
+                        coverUrl: track.cover_url,
+                        tags: ['REMIX'],
+                        platforms: track.platform ? [track.platform] : [],
+                        hasDownload: track.is_free_download,
+                      }))}
+                      onPlayItem={handlePlayTrack}
+                    />
+                  </div>
+                )}
+
+                {freeDownloads.length > 0 && (
+                  <div className="bg-[#0A0A0A] rounded-2xl p-6">
+                    <MusicCarousel
+                      title="Free Downloads"
+                      items={freeDownloads.slice(0, 10).map((track) => ({
+                        id: track.id,
+                        title: track.title,
+                        artist: track.artist,
+                        coverUrl: track.cover_url,
+                        tags: ['FREE DL'],
+                        hasDownload: true,
+                      }))}
+                      onPlayItem={handlePlayTrack}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="lg:sticky lg:top-24 lg:self-start">

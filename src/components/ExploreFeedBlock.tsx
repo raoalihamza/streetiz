@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Search, SlidersHorizontal, X, ChevronLeft, ChevronRight, Play, Download, ExternalLink, FileText, Music2 } from 'lucide-react';
+import { Search, SlidersHorizontal, X, ChevronLeft, ChevronRight, Play, Download, ExternalLink, FileText, Music2, Youtube } from 'lucide-react';
 
 interface FilterState {
   tab: string;
@@ -17,8 +17,10 @@ interface FeedItem {
   artist?: string;
   coverUrl: string;
   tags?: string[];
+  platform?: string;
   duration?: number;
   description?: string;
+  isVideo?: boolean;
   onPlay?: () => void;
   onDownload?: () => void;
   externalUrl?: string;
@@ -30,24 +32,24 @@ interface ExploreFeedBlockProps {
 }
 
 const TABS = [
-  'General Feed',
-  'New Releases',
+  'All',
+  'New',
   'Remixes',
-  'Free Downloads',
   'DJ Sets',
+  'Free DL',
   'Podcasts',
   'Articles',
   'Packs',
 ];
 
-const GENRES = ['Electro', 'Techno', 'Afro House', 'House', 'Breakbeat', 'Tecktonik', 'Melodic'];
-const PLATFORMS = ['Spotify', 'Deezer', 'SoundCloud', 'Beatport', 'YouTube'];
-const MOODS = ['Dark', 'Rave', 'Chill', 'Melodic', 'Energetic'];
+const GENRES = ['Electro', 'Techno', 'Afro House', 'House', 'Breakbeat'];
+const PLATFORMS = ['YouTube', 'SoundCloud', 'Spotify', 'Deezer', 'Beatport'];
+const MOODS = ['Dark', 'Rave', 'Chill', 'Melodic'];
 const SORT_OPTIONS = ['Newest', 'Trending', 'Most Played'];
 
 export default function ExploreFeedBlock({ feedItems, onFilterChange }: ExploreFeedBlockProps) {
   const [filters, setFilters] = useState<FilterState>({
-    tab: 'General Feed',
+    tab: 'All',
     genres: [],
     platforms: [],
     moods: [],
@@ -84,7 +86,7 @@ export default function ExploreFeedBlock({ feedItems, onFilterChange }: ExploreF
 
   const resetFilters = () => {
     const defaultFilters = {
-      tab: 'General Feed',
+      tab: 'All',
       genres: [],
       platforms: [],
       moods: [],
@@ -97,7 +99,7 @@ export default function ExploreFeedBlock({ feedItems, onFilterChange }: ExploreF
   };
 
   const getActiveFilterText = () => {
-    const parts = ['You\'re browsing:', filters.tab];
+    const parts = ['Browsing:', filters.tab];
     if (filters.genres.length > 0) parts.push(...filters.genres);
     if (filters.platforms.length > 0) parts.push(...filters.platforms);
     if (filters.moods.length > 0) parts.push(...filters.moods);
@@ -122,11 +124,45 @@ export default function ExploreFeedBlock({ feedItems, onFilterChange }: ExploreF
     }
   };
 
+  const getPlatformIcon = (platform?: string) => {
+    if (!platform) return null;
+
+    switch (platform.toLowerCase()) {
+      case 'youtube':
+        return <Youtube className="w-4 h-4" />;
+      case 'soundcloud':
+        return <Music2 className="w-4 h-4" />;
+      case 'spotify':
+        return <Music2 className="w-4 h-4" />;
+      default:
+        return <Music2 className="w-4 h-4" />;
+    }
+  };
+
+  const getPlatformColor = (platform?: string) => {
+    if (!platform) return 'bg-gray-600';
+
+    switch (platform.toLowerCase()) {
+      case 'youtube':
+        return 'bg-red-600';
+      case 'soundcloud':
+        return 'bg-orange-600';
+      case 'spotify':
+        return 'bg-green-600';
+      case 'deezer':
+        return 'bg-blue-600';
+      case 'beatport':
+        return 'bg-cyan-600';
+      default:
+        return 'bg-gray-600';
+    }
+  };
+
   return (
-    <div className="bg-[#121212] rounded-3xl p-6 md:p-8 border border-[#282828]">
-      <div className="mb-8">
-        <h2 className="text-3xl md:text-4xl font-black text-white mb-2">Explore Music</h2>
-        <p className="text-gray-400">Browse, discover, and enjoy the best electronic music</p>
+    <div className="mb-12">
+      <div className="mb-6">
+        <h2 className="text-2xl font-black text-white mb-1">Explore Feed</h2>
+        <p className="text-gray-400 text-sm">All music, videos, and content in one place</p>
       </div>
 
       <div className="relative mb-6 group">
@@ -274,7 +310,7 @@ export default function ExploreFeedBlock({ feedItems, onFilterChange }: ExploreF
         </div>
       </div>
 
-      {(hasActiveFilters || filters.tab !== 'General Feed') && (
+      {(hasActiveFilters || filters.tab !== 'All') && (
         <div className="mb-6 text-sm text-gray-400 bg-[#181818] rounded-lg px-4 py-3">
           {getActiveFilterText()}
         </div>
@@ -322,9 +358,9 @@ export default function ExploreFeedBlock({ feedItems, onFilterChange }: ExploreF
         </div>
       )}
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {feedItems.length === 0 ? (
-          <div className="col-span-full text-center py-12">
+          <div className="col-span-full text-center py-16">
             <div className="text-gray-500 text-lg mb-2">No items found</div>
             <p className="text-gray-600 text-sm">Try adjusting your filters</p>
           </div>
@@ -332,7 +368,7 @@ export default function ExploreFeedBlock({ feedItems, onFilterChange }: ExploreF
           feedItems.map((item) => (
             <div
               key={item.id}
-              className="bg-[#181818] rounded-xl overflow-hidden hover:bg-[#282828] transition-all cursor-pointer group"
+              className="bg-[#181818] rounded-xl overflow-hidden hover:bg-[#202020] transition-all group"
             >
               <div className="relative aspect-square">
                 <img
@@ -341,49 +377,64 @@ export default function ExploreFeedBlock({ feedItems, onFilterChange }: ExploreF
                   className="w-full h-full object-cover"
                 />
 
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                   <button
                     onClick={item.onPlay}
-                    className="w-12 h-12 bg-streetiz-red rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow-lg"
+                    className="w-14 h-14 bg-streetiz-red rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow-lg"
                   >
-                    {getItemIcon(item.type)}
+                    {item.isVideo ? (
+                      <Play className="w-6 h-6 text-white ml-0.5" fill="white" />
+                    ) : (
+                      getItemIcon(item.type)
+                    )}
                   </button>
                 </div>
 
-                {item.tags && item.tags.length > 0 && (
-                  <div className="absolute top-2 left-2 flex flex-wrap gap-1">
-                    {item.tags.slice(0, 2).map((tag, index) => (
-                      <span
-                        key={index}
-                        className="px-2 py-0.5 bg-streetiz-red/90 backdrop-blur-sm rounded text-[10px] font-bold text-white uppercase"
-                      >
-                        {tag}
-                      </span>
-                    ))}
+                <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
+                  {item.tags && item.tags.slice(0, 2).map((tag, index) => (
+                    <span
+                      key={index}
+                      className="px-2.5 py-1 bg-black/70 backdrop-blur-sm rounded-lg text-[10px] font-bold text-white uppercase"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+
+                {item.platform && (
+                  <div className="absolute top-3 right-3">
+                    <div className={`${getPlatformColor(item.platform)} p-1.5 rounded-lg backdrop-blur-sm`}>
+                      {getPlatformIcon(item.platform)}
+                    </div>
                   </div>
                 )}
               </div>
 
-              <div className="p-3">
-                <h3 className="text-white font-bold text-sm truncate group-hover:text-streetiz-red transition-colors">
+              <div className="p-4">
+                <h3 className="text-white font-bold text-sm truncate mb-1 group-hover:text-streetiz-red transition-colors">
                   {item.title}
                 </h3>
                 {item.artist && (
-                  <p className="text-gray-400 text-xs truncate mt-1">{item.artist}</p>
+                  <p className="text-gray-400 text-xs truncate mb-3">{item.artist}</p>
                 )}
 
-                <div className="flex items-center gap-2 mt-3">
+                <div className="flex items-center gap-2">
+                  {item.externalUrl && (
+                    <button
+                      onClick={() => window.open(item.externalUrl, '_blank')}
+                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-[#282828] hover:bg-[#383838] rounded-lg transition-colors text-xs font-bold text-gray-300"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      <span>Open</span>
+                    </button>
+                  )}
                   {item.onDownload && (
                     <button
                       onClick={item.onDownload}
-                      className="flex-1 p-2 bg-[#282828] hover:bg-[#383838] rounded-lg transition-colors"
+                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-[#282828] hover:bg-green-600 rounded-lg transition-colors text-xs font-bold text-gray-300 hover:text-white"
                     >
-                      <Download className="w-4 h-4 text-gray-400 mx-auto" />
-                    </button>
-                  )}
-                  {item.externalUrl && (
-                    <button className="flex-1 p-2 bg-[#282828] hover:bg-[#383838] rounded-lg transition-colors">
-                      <ExternalLink className="w-4 h-4 text-gray-400 mx-auto" />
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Free DL</span>
                     </button>
                   )}
                 </div>
