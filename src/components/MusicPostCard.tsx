@@ -14,6 +14,7 @@ interface MusicPostCardProps {
   comments?: number;
   coverUrl?: string;
   tags?: string[];
+  genre?: string;
   onLike?: () => void;
   onComment?: () => void;
 }
@@ -30,6 +31,7 @@ export default function MusicPostCard({
   comments = 0,
   coverUrl,
   tags = [],
+  genre,
   onLike,
   onComment,
 }: MusicPostCardProps) {
@@ -59,37 +61,28 @@ export default function MusicPostCard({
 
     if (contentType === 'soundcloud' && soundcloudUrl) {
       return (
-        <div className="relative w-full bg-gradient-to-br from-[#1a1a1a] to-[#0a0a0a] rounded-xl overflow-hidden p-6">
+        <div className="relative w-full aspect-video bg-gradient-to-br from-orange-900/20 to-[#0a0a0a] rounded-t-xl overflow-hidden group/sound cursor-pointer">
           {coverUrl && (
-            <div className="flex items-center gap-4 mb-4">
-              <img
-                src={coverUrl}
-                alt={title}
-                className="w-24 h-24 rounded-lg object-cover"
-              />
-              <div className="flex-1">
-                <h4 className="text-white font-bold text-lg mb-1">{title}</h4>
-                <p className="text-gray-400 text-sm">{artist}</p>
-              </div>
-              <button className="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center hover:bg-orange-600 transition-colors">
-                <Play className="w-5 h-5 text-white fill-white ml-0.5" />
-              </button>
-            </div>
+            <img
+              src={coverUrl}
+              alt={title}
+              className="w-full h-full object-cover opacity-60 group-hover/sound:opacity-40 transition-opacity"
+            />
           )}
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            <div className="flex-1 h-1 bg-gray-800 rounded-full overflow-hidden">
-              <div className="w-1/3 h-full bg-orange-500" />
-            </div>
-            <span>2:34 / 5:12</span>
+          <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover/sound:bg-black/50 transition-colors">
+            <a
+              href={soundcloudUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-16 h-16 bg-orange-500 rounded-full flex items-center justify-center hover:bg-orange-600 hover:scale-110 transition-all"
+            >
+              <Play className="w-7 h-7 text-white fill-white ml-1" />
+            </a>
           </div>
-          <a
-            href={soundcloudUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-4 inline-flex items-center text-sm text-orange-500 hover:text-orange-400 transition-colors"
-          >
-            Écouter sur SoundCloud →
-          </a>
+          <div className="absolute top-3 right-3 px-2.5 py-1 bg-orange-500 rounded-full flex items-center gap-1.5">
+            <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
+            <span className="text-white text-xs font-bold">SoundCloud</span>
+          </div>
         </div>
       );
     }
@@ -129,65 +122,39 @@ export default function MusicPostCard({
   };
 
   return (
-    <article className="bg-[#1a1a1a] rounded-2xl overflow-hidden border border-gray-800 hover:border-gray-700 transition-colors">
-      <div className="p-6">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-12 h-12 bg-gradient-to-br from-streetiz-red to-red-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-            {artist.charAt(0)}
+    <article className="bg-[#1a1a1a] rounded-xl overflow-hidden border border-gray-800 hover:border-streetiz-red/30 transition-all group">
+      {renderMedia()}
+
+      <div className="p-4">
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <div className="flex-1 min-w-0">
+            <h3 className="text-white font-bold text-base mb-1 line-clamp-2 group-hover:text-streetiz-red transition-colors">
+              {title}
+            </h3>
+            <p className="text-gray-400 text-sm">{artist}</p>
           </div>
-          <div className="flex-1">
-            <h3 className="text-white font-bold">{artist}</h3>
-            <p className="text-gray-400 text-sm">Music</p>
-          </div>
+          {genre && (
+            <span className="flex-shrink-0 px-2.5 py-1 bg-streetiz-red/10 border border-streetiz-red/30 rounded-full text-streetiz-red text-xs font-semibold uppercase">
+              {genre}
+            </span>
+          )}
         </div>
 
-        {description && (
-          <div className="mb-4">
-            <h4 className="text-white font-semibold text-lg mb-2">{title}</h4>
-            <p className="text-gray-300 text-sm leading-relaxed">{description}</p>
-          </div>
-        )}
+        <div className="flex items-center justify-between">
+          <button
+            onClick={handleLike}
+            className={`flex items-center gap-1.5 transition-colors ${
+              isLiked ? 'text-streetiz-red' : 'text-gray-400 hover:text-streetiz-red'
+            }`}
+          >
+            <Heart className={`w-4 h-4 ${isLiked ? 'fill-streetiz-red' : ''}`} />
+            <span className="text-sm font-semibold">{likeCount}</span>
+          </button>
 
-        {tags.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-4">
-            {tags.map((tag, index) => (
-              <span
-                key={index}
-                className="px-3 py-1 bg-streetiz-red/10 border border-streetiz-red/20 rounded-full text-streetiz-red text-xs font-semibold"
-              >
-                #{tag}
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className="px-6 pb-4">
-        {renderMedia()}
-      </div>
-
-      <div className="px-6 py-4 border-t border-gray-800 flex items-center justify-between">
-        <button
-          onClick={handleLike}
-          className={`flex items-center gap-2 transition-colors ${
-            isLiked ? 'text-streetiz-red' : 'text-gray-400 hover:text-streetiz-red'
-          }`}
-        >
-          <Heart className={`w-5 h-5 ${isLiked ? 'fill-streetiz-red' : ''}`} />
-          <span className="text-sm font-semibold">{likeCount}</span>
-        </button>
-
-        <button
-          onClick={onComment}
-          className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
-        >
-          <MessageCircle className="w-5 h-5" />
-          <span className="text-sm font-semibold">{comments}</span>
-        </button>
-
-        <button className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
-          <Share2 className="w-5 h-5" />
-        </button>
+          <button className="flex items-center gap-1.5 text-gray-400 hover:text-white transition-colors">
+            <Share2 className="w-4 h-4" />
+          </button>
+        </div>
       </div>
     </article>
   );

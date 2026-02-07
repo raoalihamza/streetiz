@@ -45,6 +45,8 @@ export default function MusicPage() {
   const [reels, setReels] = useState<MusicPost[]>([]);
   const [topTracks, setTopTracks] = useState<any[]>([]);
   const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
+  const [selectedGenre, setSelectedGenre] = useState<string>('all');
+  const [selectedType, setSelectedType] = useState<'all' | 'youtube' | 'soundcloud'>('all');
 
   useEffect(() => {
     loadAllContent();
@@ -114,6 +116,14 @@ export default function MusicPage() {
     }
   };
 
+  const genres = ['all', ...Array.from(new Set(posts.map(p => p.genre)))];
+
+  const filteredPosts = posts.filter(post => {
+    const genreMatch = selectedGenre === 'all' || post.genre === selectedGenre;
+    const typeMatch = selectedType === 'all' || post.content_type === selectedType;
+    return genreMatch && typeMatch;
+  });
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0F0F0F] flex items-center justify-center">
@@ -160,27 +170,95 @@ export default function MusicPage() {
               ) : (
                 <>
                   <div className="mb-6">
-                    <h2 className="text-2xl font-black text-white mb-1">Latest Tracks & Videos</h2>
-                    <p className="text-gray-400 text-sm">YouTube et SoundCloud</p>
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h2 className="text-2xl font-black text-white mb-1">Latest Tracks & Videos</h2>
+                        <p className="text-gray-400 text-sm">YouTube et SoundCloud</p>
+                      </div>
+                      <span className="text-sm text-gray-500">
+                        {filteredPosts.length} résultat{filteredPosts.length > 1 ? 's' : ''}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-wrap gap-3">
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setSelectedType('all')}
+                          className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                            selectedType === 'all'
+                              ? 'bg-streetiz-red text-white'
+                              : 'bg-[#1a1a1a] text-gray-400 hover:text-white border border-gray-800'
+                          }`}
+                        >
+                          Tous
+                        </button>
+                        <button
+                          onClick={() => setSelectedType('youtube')}
+                          className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                            selectedType === 'youtube'
+                              ? 'bg-streetiz-red text-white'
+                              : 'bg-[#1a1a1a] text-gray-400 hover:text-white border border-gray-800'
+                          }`}
+                        >
+                          YouTube
+                        </button>
+                        <button
+                          onClick={() => setSelectedType('soundcloud')}
+                          className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                            selectedType === 'soundcloud'
+                              ? 'bg-streetiz-red text-white'
+                              : 'bg-[#1a1a1a] text-gray-400 hover:text-white border border-gray-800'
+                          }`}
+                        >
+                          SoundCloud
+                        </button>
+                      </div>
+
+                      <div className="w-px bg-gray-800 mx-1" />
+
+                      <div className="flex gap-2 flex-wrap">
+                        {genres.map((genre) => (
+                          <button
+                            key={genre}
+                            onClick={() => setSelectedGenre(genre)}
+                            className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all capitalize ${
+                              selectedGenre === genre
+                                ? 'bg-streetiz-red text-white'
+                                : 'bg-[#1a1a1a] text-gray-400 hover:text-white border border-gray-800'
+                            }`}
+                          >
+                            {genre === 'all' ? 'Tous les genres' : genre}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                    {posts.map((post) => (
-                      <MusicPostCard
-                        key={post.id}
-                        id={post.id}
-                        title={post.title}
-                        artist={post.artist}
-                        description={post.description}
-                        contentType={post.content_type}
-                        youtubeEmbedId={post.youtube_embed_id}
-                        soundcloudUrl={post.soundcloud_url}
-                        instagramUrl={post.instagram_url}
-                        likes={post.likes}
-                        coverUrl={post.cover_url}
-                        tags={post.tags}
-                      />
-                    ))}
-                  </div>
+
+                  {filteredPosts.length === 0 ? (
+                    <div className="text-center py-12">
+                      <p className="text-gray-500">Aucun résultat pour ces filtres</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                      {filteredPosts.map((post) => (
+                        <MusicPostCard
+                          key={post.id}
+                          id={post.id}
+                          title={post.title}
+                          artist={post.artist}
+                          description={post.description}
+                          contentType={post.content_type}
+                          youtubeEmbedId={post.youtube_embed_id}
+                          soundcloudUrl={post.soundcloud_url}
+                          instagramUrl={post.instagram_url}
+                          likes={post.likes}
+                          coverUrl={post.cover_url}
+                          tags={post.tags}
+                          genre={post.genre}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </>
               )}
             </div>
