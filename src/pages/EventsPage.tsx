@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Calendar, MapPin, Plus, TrendingUp, Award, Star, Map, SlidersHorizontal, Check } from 'lucide-react';
+import { Calendar, MapPin, Plus, TrendingUp, Award, Star, SlidersHorizontal, Check } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import EventModal from '../components/EventModal';
@@ -293,17 +293,10 @@ export default function EventsPage({ onNavigate }: EventsPageProps) {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between mb-4">
+              <div className="mb-4">
                 <div className="text-sm text-gray-400">
                   {filteredEvents.length === 0 ? 'No events' : `${filteredEvents.length} events`}
                 </div>
-                <button
-                  onClick={() => onNavigate('map')}
-                  className="flex items-center gap-2 px-4 py-2 bg-[#181818] hover:bg-[#282828] rounded-lg transition-colors text-white text-sm font-bold"
-                >
-                  <Map className="w-4 h-4" />
-                  <span>Map View</span>
-                </button>
               </div>
 
               {filteredEvents.length === 0 ? (
