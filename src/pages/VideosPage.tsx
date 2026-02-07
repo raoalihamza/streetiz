@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { Search, Play, Eye, MapPin, X, Map, Grid3x3, ChevronLeft, ChevronRight, Youtube, Music, Instagram } from 'lucide-react';
+import { Search, Play, Eye, MapPin, X, Map, Grid3x3, ChevronLeft, ChevronRight, Youtube, Music, Instagram, SlidersHorizontal } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface Video {
@@ -43,6 +43,8 @@ export default function VideosPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [sortBy, setSortBy] = useState('newest');
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [showFiltersDrawer, setShowFiltersDrawer] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [shortsScrollPosition, setShortsScrollPosition] = useState(0);
@@ -282,45 +284,81 @@ export default function VideosPage() {
             </button>
           </div>
 
-          <div className="relative mb-6">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#666]" />
-            <input
-              type="text"
-              placeholder="Search videos, artists, countries..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-4 bg-[#111] border border-[#333] rounded-xl text-white placeholder-[#666] focus:outline-none focus:border-streetiz-red transition-colors"
-            />
+          <div className="relative mb-8">
+            <div className="bg-[#151515] rounded-2xl p-4 border border-[#282828]">
+              <div className="flex items-center gap-3 flex-wrap">
+                <div
+                  className={`relative flex-1 min-w-[300px] max-w-[60%] transition-all duration-300 ${
+                    isSearchFocused ? 'scale-[1.02]' : 'scale-100'
+                  }`}
+                >
+                  <Search className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors duration-300 ${
+                    isSearchFocused ? 'text-streetiz-red' : 'text-[#666]'
+                  }`} />
+                  <input
+                    type="text"
+                    placeholder="Search videos, artists, countries..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onFocus={() => setIsSearchFocused(true)}
+                    onBlur={() => setIsSearchFocused(false)}
+                    className={`w-full pl-12 pr-4 py-3 bg-[#0D0D0D] border-2 rounded-full text-white placeholder-[#666] focus:outline-none transition-all duration-300 ${
+                      isSearchFocused
+                        ? 'border-streetiz-red shadow-lg shadow-streetiz-red/20'
+                        : 'border-[#333] hover:border-[#444]'
+                    }`}
+                    style={{
+                      backdropFilter: 'blur(10px)',
+                      animation: isSearchFocused ? 'glow 2s ease-in-out infinite' : 'none',
+                    }}
+                  />
+                  {isSearchFocused && (
+                    <div className="absolute inset-0 rounded-full bg-gradient-to-r from-streetiz-red/20 via-transparent to-streetiz-red/20 pointer-events-none animate-pulse"></div>
+                  )}
+                </div>
+
+                <button
+                  onClick={() => setShowFiltersDrawer(!showFiltersDrawer)}
+                  className="flex items-center gap-2 px-5 py-3 bg-[#0D0D0D] border-2 border-[#333] hover:border-streetiz-red rounded-full text-white text-sm font-bold transition-all hover:shadow-lg hover:shadow-streetiz-red/20"
+                >
+                  <SlidersHorizontal className="w-4 h-4" />
+                  <span>Filters</span>
+                </button>
+
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="px-5 py-3 rounded-full bg-[#0D0D0D] text-white text-sm font-bold border-2 border-[#333] hover:border-streetiz-red focus:outline-none focus:border-streetiz-red transition-all cursor-pointer"
+                >
+                  <option value="newest">Newest</option>
+                  <option value="trending">Trending</option>
+                  <option value="mostviewed">Most Viewed</option>
+                </select>
+              </div>
+            </div>
           </div>
         </div>
 
         <div className="sticky top-0 z-30 bg-[#0D0D0D]/95 backdrop-blur-sm py-5 mb-8 -mx-4 px-4 border-b border-[#222]">
-          <div className="flex items-center justify-between gap-6">
-            <div className="flex flex-wrap items-center gap-3">
-              {categories.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`px-5 py-2 rounded-full text-sm font-semibold transition-all ${
-                    selectedCategory === cat
-                      ? 'bg-streetiz-red text-white shadow-lg shadow-streetiz-red/30'
-                      : 'bg-[#1a1a1a] text-[#a0a0a0] hover:bg-[#222] hover:text-white'
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
-
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="px-4 py-2 rounded-lg bg-[#1a1a1a] text-white text-sm font-semibold border border-[#333] hover:border-streetiz-red focus:outline-none focus:border-streetiz-red transition-all cursor-pointer flex-shrink-0"
-            >
-              <option value="newest">Newest</option>
-              <option value="trending">Trending</option>
-              <option value="mostviewed">Most Viewed</option>
-            </select>
+          <div className="flex flex-wrap items-center gap-2">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => {
+                  setSelectedCategory(cat);
+                }}
+                className={`px-4 py-2 rounded-full text-xs font-bold transition-all duration-300 transform ${
+                  selectedCategory === cat
+                    ? 'bg-streetiz-red text-white shadow-lg shadow-streetiz-red/40 scale-105 animate-bounce-subtle'
+                    : 'bg-[#1a1a1a] text-[#a0a0a0] hover:bg-[#222] hover:text-white hover:scale-105'
+                }`}
+                style={{
+                  animation: selectedCategory === cat ? 'bounce-subtle 0.5s ease-out' : 'none',
+                }}
+              >
+                {cat}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -586,6 +624,94 @@ export default function VideosPage() {
                 </span>
               </div>
               <p className="text-[#a0a0a0] text-sm mt-2">Press ESC to close</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showFiltersDrawer && (
+        <div
+          className="fixed inset-0 bg-black/80 z-50 flex items-end sm:items-center justify-center p-4"
+          onClick={() => setShowFiltersDrawer(false)}
+        >
+          <div
+            className="bg-[#111] border border-[#333] rounded-2xl p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-2xl font-bold text-white">More Filters</h3>
+              <button
+                onClick={() => setShowFiltersDrawer(false)}
+                className="w-10 h-10 bg-[#1a1a1a] hover:bg-[#222] rounded-full flex items-center justify-center transition-colors"
+              >
+                <X className="w-5 h-5 text-white" />
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-bold text-white mb-3">Video Type</label>
+                <div className="flex flex-wrap gap-2">
+                  {['YouTube', 'TikTok', 'Instagram', 'Vimeo'].map((type) => (
+                    <button
+                      key={type}
+                      className="px-4 py-2 bg-[#1a1a1a] hover:bg-streetiz-red border border-[#333] hover:border-streetiz-red rounded-full text-sm font-semibold text-white transition-all"
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-white mb-3">Orientation</label>
+                <div className="flex gap-2">
+                  <button className="flex-1 px-4 py-2 bg-[#1a1a1a] hover:bg-streetiz-red border border-[#333] hover:border-streetiz-red rounded-lg text-sm font-semibold text-white transition-all">
+                    Horizontal
+                  </button>
+                  <button className="flex-1 px-4 py-2 bg-[#1a1a1a] hover:bg-streetiz-red border border-[#333] hover:border-streetiz-red rounded-lg text-sm font-semibold text-white transition-all">
+                    Vertical
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-white mb-3">Duration</label>
+                <div className="flex flex-wrap gap-2">
+                  {['Under 1 min', '1-5 min', '5-10 min', '10+ min'].map((duration) => (
+                    <button
+                      key={duration}
+                      className="px-4 py-2 bg-[#1a1a1a] hover:bg-streetiz-red border border-[#333] hover:border-streetiz-red rounded-full text-sm font-semibold text-white transition-all"
+                    >
+                      {duration}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-white mb-3">Location</label>
+                <input
+                  type="text"
+                  placeholder="Search by city or country..."
+                  className="w-full px-4 py-3 bg-[#0D0D0D] border border-[#333] rounded-lg text-white placeholder-[#666] focus:outline-none focus:border-streetiz-red transition-colors"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-8">
+              <button
+                onClick={() => setShowFiltersDrawer(false)}
+                className="flex-1 px-6 py-3 bg-[#1a1a1a] hover:bg-[#222] rounded-lg font-bold text-white transition-colors"
+              >
+                Clear All
+              </button>
+              <button
+                onClick={() => setShowFiltersDrawer(false)}
+                className="flex-1 px-6 py-3 bg-streetiz-red hover:bg-streetiz-red/90 rounded-lg font-bold text-white transition-colors shadow-lg shadow-streetiz-red/30"
+              >
+                Apply Filters
+              </button>
             </div>
           </div>
         </div>
