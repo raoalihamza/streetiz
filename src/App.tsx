@@ -15,6 +15,7 @@ import MapPage from './pages/MapPage';
 import ContactPage from './pages/ContactPage';
 import ArticlePage from './pages/ArticlePage';
 import ProfilePage from './pages/ProfilePage';
+import MessagesPage from './pages/MessagesPage';
 
 interface Track {
   id: string;
@@ -68,6 +69,7 @@ function AppContent() {
         <Route path="/news" element={<NewsPage />} />
         <Route path="/article" element={pageData ? <ArticlePage article={pageData} onNavigate={handleNavigate} onBack={handleBack} /> : <HomePage onNavigate={handleNavigate} />} />
         <Route path="/community" element={<CommunityPage onNavigate={handleNavigate} />} />
+        <Route path="/messages" element={<MessagesPage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/profile/:username" element={<ProfilePage />} />

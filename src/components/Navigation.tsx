@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, User, Search, Bell, LogOut, Settings } from 'lucide-react';
+import { Menu, X, User, Search, Bell, LogOut, Settings, MessageCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 interface NavigationProps {
@@ -94,6 +94,17 @@ export default function Navigation({ currentPage: propCurrentPage, onNavigate: p
               }`}
             >
               Community
+            </button>
+
+            <button
+              onClick={() => handleNavigate('messages')}
+              className={`text-sm font-semibold transition-colors py-2 ${
+                currentPage === 'messages'
+                  ? 'text-streetiz-red'
+                  : 'text-white hover:text-streetiz-red'
+              }`}
+            >
+              Messages
             </button>
 
             <button
@@ -256,6 +267,16 @@ export default function Navigation({ currentPage: propCurrentPage, onNavigate: p
               }`}
             >
               Community
+            </button>
+            <button
+              onClick={() => handleNavigate('messages')}
+              className={`block w-full text-left px-4 py-3 rounded-xl font-semibold text-sm transition-colors ${
+                currentPage === 'messages'
+                  ? 'bg-streetiz-red text-white'
+                  : 'text-white hover:bg-[#1a1a1a]'
+              }`}
+            >
+              Messages
             </button>
             <button
               onClick={() => handleNavigate('contact')}
