@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Calendar, MapPin, Plus, TrendingUp, Award, Star, Map, SlidersHorizontal, Check } from 'lucide-react';
+import { Calendar, MapPin, Plus, TrendingUp, Award, Star, Map, SlidersHorizontal, Check, Navigation } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import EventModal from '../components/EventModal';
@@ -18,6 +18,11 @@ interface Event {
   price: number;
   ticket_url: string | null;
   status: string;
+  music_genre?: string | null;
+  battle_level?: string | null;
+  vibes?: string[] | null;
+  is_fashion_week?: boolean;
+  is_free?: boolean;
 }
 
 interface EventsPageProps {
@@ -35,7 +40,7 @@ const CITIES = [
   { name: 'Amsterdam', country: 'Netherlands', imageUrl: 'https://images.pexels.com/photos/208733/pexels-photo-208733.jpeg?auto=compress&cs=tinysrgb&w=800', eventCount: 14 },
 ];
 
-const CATEGORIES = ['ALL', 'Party', 'Festival', 'Battle', 'Workshop', 'Concert'];
+const CATEGORIES = ['ALL', 'Party', 'Festival', 'Battle', 'Workshop', 'Concert', 'Fashion Event', 'Paris Fashion Week'];
 const DATE_FILTERS = ['Tonight', 'This Week', 'This Month'];
 const COUNTRIES = [
   { name: 'France', flag: '🇫🇷' },
@@ -57,6 +62,7 @@ export default function EventsPage({ onNavigate }: EventsPageProps) {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [isFiltersDrawerOpen, setIsFiltersDrawerOpen] = useState(false);
   const [showCountryDropdown, setShowCountryDropdown] = useState(false);
+  const [nearMeActive, setNearMeActive] = useState(false);
   const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilters>({
     priceMin: 0,
     priceMax: 500,
@@ -65,6 +71,10 @@ export default function EventsPage({ onNavigate }: EventsPageProps) {
     eventType: '',
     city: '',
     distance: 50,
+    musicGenres: [],
+    battleLevel: '',
+    freeEntry: false,
+    vibes: [],
   });
   const { isOrganizer } = useAuth();
 
@@ -76,7 +86,7 @@ export default function EventsPage({ onNavigate }: EventsPageProps) {
 
   useEffect(() => {
     loadEvents();
-  }, [selectedCategory, selectedCity]);
+  }, [selectedCategory, selectedCity, selectedCountry]);
 
   const loadEvents = async () => {
     try {
@@ -88,11 +98,21 @@ export default function EventsPage({ onNavigate }: EventsPageProps) {
         .order('event_date', { ascending: true });
 
       if (selectedCategory !== 'ALL') {
-        query = query.eq('category', selectedCategory.toLowerCase());
+        if (selectedCategory === 'Paris Fashion Week') {
+          query = query.eq('is_fashion_week', true);
+        } else if (selectedCategory === 'Fashion Event') {
+          query = query.or('category.ilike.%fashion%,is_fashion_week.eq.true');
+        } else {
+          query = query.eq('category', selectedCategory.toLowerCase());
+        }
       }
 
       if (selectedCity) {
         query = query.ilike('location', `%${selectedCity}%`);
+      }
+
+      if (selectedCountry) {
+        query = query.ilike('location', `%${selectedCountry}%`);
       }
 
       const { data, error } = await query;
@@ -128,6 +148,52 @@ export default function EventsPage({ onNavigate }: EventsPageProps) {
       }
     }
 
+    if (advancedFilters.freeEntry && !event.is_free) {
+      return false;
+    }
+
+    if (advancedFilters.musicGenres.length > 0 && !advancedFilters.musicGenres.includes(event.music_genre || '')) {
+      return false;
+    }
+
+    if (advancedFilters.battleLevel && event.battle_level !== advancedFilters.battleLevel) {
+      return false;
+    }
+
+    if (advancedFilters.vibes.length > 0) {
+      const eventVibes = event.vibes || [];
+      const hasMatchingVibe = advancedFilters.vibes.some(vibe => eventVibes.includes(vibe));
+      if (!hasMatchingVibe) {
+        return false;
+      }
+    }
+
+    if (advancedFilters.eventType && event.category?.toLowerCase() !== advancedFilters.eventType.toLowerCase()) {
+      return false;
+    }
+
+    if (advancedFilters.priceMin > 0 || advancedFilters.priceMax < 500) {
+      if (event.price < advancedFilters.priceMin || event.price > advancedFilters.priceMax) {
+        return false;
+      }
+    }
+
+    if (advancedFilters.startDate) {
+      const eventDate = new Date(event.event_date);
+      const filterStartDate = new Date(advancedFilters.startDate);
+      if (eventDate < filterStartDate) {
+        return false;
+      }
+    }
+
+    if (advancedFilters.endDate) {
+      const eventDate = new Date(event.event_date);
+      const filterEndDate = new Date(advancedFilters.endDate);
+      if (eventDate > filterEndDate) {
+        return false;
+      }
+    }
+
     return matchesDateFilter;
   });
 
@@ -145,9 +211,10 @@ export default function EventsPage({ onNavigate }: EventsPageProps) {
     setSelectedCity('');
     setSelectedDateFilter('');
     setSelectedStyle('');
+    setNearMeActive(false);
   };
 
-  const hasActiveFilters = selectedCategory !== 'ALL' || selectedCountry || selectedCity || selectedDateFilter || selectedStyle;
+  const hasActiveFilters = selectedCategory !== 'ALL' || selectedCountry || selectedCity || selectedDateFilter || selectedStyle || nearMeActive;
 
   if (loading) {
     return (
@@ -247,6 +314,19 @@ export default function EventsPage({ onNavigate }: EventsPageProps) {
                     )}
                   </div>
 
+                  <button
+                    onClick={() => setNearMeActive(!nearMeActive)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex-shrink-0 transform hover:scale-105 ${
+                      nearMeActive
+                        ? 'bg-streetiz-red text-white shadow-md shadow-red-500/20'
+                        : 'bg-[#1a1a1a] text-gray-400 hover:bg-[#282828] hover:text-white'
+                    }`}
+                  >
+                    {nearMeActive && <Check className="w-3 h-3" />}
+                    <Navigation className="w-3 h-3" />
+                    <span>Near Me</span>
+                  </button>
+
                   <div className="w-px h-4 bg-[#333] flex-shrink-0"></div>
 
                   {CITIES.slice(0, 6).map((city) => (
@@ -328,6 +408,9 @@ export default function EventsPage({ onNavigate }: EventsPageProps) {
                           imageUrl={event.featured_image || ''}
                           ticketUrl={event.ticket_url || undefined}
                           onClick={() => setSelectedEvent(event)}
+                          genre={event.music_genre || undefined}
+                          battleLevel={event.battle_level || undefined}
+                          isFashionWeek={event.is_fashion_week || false}
                         />
                       </div>
                     );

@@ -11,6 +11,9 @@ interface CompactEventCardProps {
   imageUrl: string;
   ticketUrl?: string;
   onClick: () => void;
+  genre?: string;
+  battleLevel?: string;
+  isFashionWeek?: boolean;
 }
 
 export default function CompactEventCard({
@@ -23,6 +26,9 @@ export default function CompactEventCard({
   imageUrl,
   ticketUrl,
   onClick,
+  genre,
+  battleLevel,
+  isFashionWeek,
 }: CompactEventCardProps) {
   const formatDate = (dateString: string) => {
     const d = new Date(dateString);
@@ -48,10 +54,32 @@ export default function CompactEventCard({
 
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
 
-        <div className="absolute top-3 left-3">
+        <div className="absolute top-3 left-3 flex flex-col gap-2">
           <span className="bg-streetiz-red/90 backdrop-blur-sm px-3 py-1.5 rounded-lg text-xs font-bold text-white uppercase">
             {category}
           </span>
+          {genre && (
+            <span className="bg-purple-600/90 backdrop-blur-sm px-3 py-1.5 rounded-lg text-xs font-bold text-white">
+              {genre}
+            </span>
+          )}
+          {battleLevel && (
+            <span className="bg-amber-500/90 backdrop-blur-sm px-3 py-1.5 rounded-lg text-xs font-bold text-white uppercase">
+              {battleLevel === 'beginner' && '🥉 Beginner'}
+              {battleLevel === 'intermediate' && '🥈 Intermediate'}
+              {battleLevel === 'pro' && '🥇 Pro'}
+            </span>
+          )}
+          {isFashionWeek && (
+            <span className="bg-pink-600/90 backdrop-blur-sm px-3 py-1.5 rounded-lg text-xs font-bold text-white uppercase">
+              Fashion Week
+            </span>
+          )}
+          {price === 0 && (
+            <span className="bg-green-600/90 backdrop-blur-sm px-3 py-1.5 rounded-lg text-xs font-bold text-white uppercase">
+              FREE
+            </span>
+          )}
         </div>
 
         <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm rounded-lg p-2 text-center min-w-[60px]">

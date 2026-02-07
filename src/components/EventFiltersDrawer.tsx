@@ -1,4 +1,4 @@
-import { X, DollarSign, Calendar, MapPin, Navigation } from 'lucide-react';
+import { X, DollarSign, Calendar, MapPin, Navigation, Music, Zap, Users, Check } from 'lucide-react';
 import { useState } from 'react';
 
 interface EventFiltersDrawerProps {
@@ -16,7 +16,29 @@ export interface AdvancedFilters {
   eventType: string;
   city: string;
   distance: number;
+  musicGenres: string[];
+  battleLevel: string;
+  freeEntry: boolean;
+  vibes: string[];
 }
+
+const MUSIC_GENRES = [
+  'Electro', 'Techno', 'Melodic Techno', 'Afro House', 'House',
+  'Hardstyle', 'Trance', 'Rave', 'Breakbeat', 'Club / Open Format'
+];
+
+const EVENT_TYPES = [
+  'Dance Battle', 'Workshop', 'Festival', 'Club Night', 'DJ Set / Live Set',
+  'Showcase', 'After Party', 'Opening / Closing Party', 'Fashion Event', 'Paris Fashion Week'
+];
+
+const BATTLE_LEVELS = [
+  { value: 'beginner', label: 'Beginner / Débutant' },
+  { value: 'intermediate', label: 'Intermediate / Intermédiaire' },
+  { value: 'pro', label: 'Pro / Professionnel' }
+];
+
+const VIBES = ['Underground', 'Rave', 'Chic / Fashion', 'Big Event', 'Intimate'];
 
 export default function EventFiltersDrawer({ isOpen, onClose, onApplyFilters, currentFilters }: EventFiltersDrawerProps) {
   const [filters, setFilters] = useState<AdvancedFilters>(currentFilters);
@@ -35,9 +57,31 @@ export default function EventFiltersDrawer({ isOpen, onClose, onApplyFilters, cu
       eventType: '',
       city: '',
       distance: 50,
+      musicGenres: [],
+      battleLevel: '',
+      freeEntry: false,
+      vibes: [],
     };
     setFilters(resetFilters);
     onApplyFilters(resetFilters);
+  };
+
+  const toggleMusicGenre = (genre: string) => {
+    setFilters({
+      ...filters,
+      musicGenres: filters.musicGenres.includes(genre)
+        ? filters.musicGenres.filter(g => g !== genre)
+        : [...filters.musicGenres, genre]
+    });
+  };
+
+  const toggleVibe = (vibe: string) => {
+    setFilters({
+      ...filters,
+      vibes: filters.vibes.includes(vibe)
+        ? filters.vibes.filter(v => v !== vibe)
+        : [...filters.vibes, vibe]
+    });
   };
 
   if (!isOpen) return null;
@@ -62,9 +106,94 @@ export default function EventFiltersDrawer({ isOpen, onClose, onApplyFilters, cu
         <div className="p-6 space-y-6">
           <div>
             <label className="flex items-center gap-2 text-white font-bold text-sm mb-3">
-              <DollarSign className="w-4 h-4 text-streetiz-red" />
-              Price Range
+              <Music className="w-4 h-4 text-streetiz-red" />
+              Music Genres
             </label>
+            <div className="flex flex-wrap gap-2">
+              {MUSIC_GENRES.map((genre) => (
+                <button
+                  key={genre}
+                  onClick={() => toggleMusicGenre(genre)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    filters.musicGenres.includes(genre)
+                      ? 'bg-streetiz-red text-white'
+                      : 'bg-[#1a1a1a] text-gray-400 hover:bg-[#282828] hover:text-white'
+                  }`}
+                >
+                  {genre}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="h-px bg-[#333]"></div>
+
+          <div>
+            <label className="flex items-center gap-2 text-white font-bold text-sm mb-3">
+              <Calendar className="w-4 h-4 text-streetiz-red" />
+              Event Types
+            </label>
+            <div className="space-y-2">
+              {EVENT_TYPES.map((type) => (
+                <button
+                  key={type}
+                  onClick={() => setFilters({ ...filters, eventType: filters.eventType === type ? '' : type })}
+                  className={`w-full px-3 py-2 rounded-lg text-xs font-bold text-left transition-all ${
+                    filters.eventType === type
+                      ? 'bg-streetiz-red text-white'
+                      : 'bg-[#1a1a1a] text-gray-400 hover:bg-[#282828] hover:text-white'
+                  }`}
+                >
+                  {type}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="h-px bg-[#333]"></div>
+
+          <div>
+            <label className="flex items-center gap-2 text-white font-bold text-sm mb-3">
+              <Users className="w-4 h-4 text-streetiz-red" />
+              Battle Level
+            </label>
+            <div className="space-y-2">
+              {BATTLE_LEVELS.map((level) => (
+                <button
+                  key={level.value}
+                  onClick={() => setFilters({ ...filters, battleLevel: filters.battleLevel === level.value ? '' : level.value })}
+                  className={`w-full px-3 py-2 rounded-lg text-xs font-bold text-left transition-all ${
+                    filters.battleLevel === level.value
+                      ? 'bg-streetiz-red text-white'
+                      : 'bg-[#1a1a1a] text-gray-400 hover:bg-[#282828] hover:text-white'
+                  }`}
+                >
+                  {level.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="h-px bg-[#333]"></div>
+
+          <div>
+            <label className="flex items-center gap-2 text-white font-bold text-sm mb-3">
+              <DollarSign className="w-4 h-4 text-streetiz-red" />
+              Price
+            </label>
+            <div className="mb-4">
+              <button
+                onClick={() => setFilters({ ...filters, freeEntry: !filters.freeEntry })}
+                className={`w-full px-4 py-3 rounded-lg text-sm font-bold transition-all flex items-center justify-between ${
+                  filters.freeEntry
+                    ? 'bg-streetiz-red text-white'
+                    : 'bg-[#1a1a1a] text-gray-400 hover:bg-[#282828] hover:text-white'
+                }`}
+              >
+                <span>Free / Gratuit</span>
+                {filters.freeEntry && <Check className="w-4 h-4" />}
+              </button>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-xs text-gray-500 mb-1 block">Min</label>
@@ -87,19 +216,33 @@ export default function EventFiltersDrawer({ isOpen, onClose, onApplyFilters, cu
                 />
               </div>
             </div>
-            <input
-              type="range"
-              min="0"
-              max="500"
-              value={filters.priceMax}
-              onChange={(e) => setFilters({ ...filters, priceMax: parseInt(e.target.value) })}
-              className="w-full mt-3 accent-streetiz-red"
-            />
-            <div className="flex justify-between text-xs text-gray-500 mt-1">
-              <span>€{filters.priceMin}</span>
-              <span>€{filters.priceMax}</span>
+          </div>
+
+          <div className="h-px bg-[#333]"></div>
+
+          <div>
+            <label className="flex items-center gap-2 text-white font-bold text-sm mb-3">
+              <Zap className="w-4 h-4 text-streetiz-red" />
+              Vibes
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {VIBES.map((vibe) => (
+                <button
+                  key={vibe}
+                  onClick={() => toggleVibe(vibe)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    filters.vibes.includes(vibe)
+                      ? 'bg-streetiz-red text-white'
+                      : 'bg-[#1a1a1a] text-gray-400 hover:bg-[#282828] hover:text-white'
+                  }`}
+                >
+                  {vibe}
+                </button>
+              ))}
             </div>
           </div>
+
+          <div className="h-px bg-[#333]"></div>
 
           <div>
             <label className="flex items-center gap-2 text-white font-bold text-sm mb-3">
