@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import { Heart, MessageCircle, Share2, Bookmark, Play, Music, ExternalLink, UserPlus, Send, Eye } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Heart, MessageCircle, Share2, Bookmark, Play, Music, ExternalLink, UserPlus, Send, Eye, Users } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import InlineAudioPlayer from './InlineAudioPlayer';
+import { supabase } from '../lib/supabase';
 
 interface Post {
   id: string;
@@ -51,6 +52,24 @@ export default function FeedPost({ post, onLike, onComment, onShare, onSave, onV
   const { user } = useAuth();
   const [showComments, setShowComments] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [followersCount, setFollowersCount] = useState<number>(0);
+
+  useEffect(() => {
+    loadFollowersCount();
+  }, [post.profiles.id]);
+
+  const loadFollowersCount = async () => {
+    try {
+      const { count } = await supabase
+        .from('user_follows')
+        .select('*', { count: 'exact', head: true })
+        .eq('following_id', post.profiles.id);
+
+      setFollowersCount(count || 0);
+    } catch (error) {
+      console.error('Error loading followers count:', error);
+    }
+  };
 
   const handleFollow = () => {
     if (onFollow && user) {
@@ -208,9 +227,20 @@ export default function FeedPost({ post, onLike, onComment, onShare, onSave, onV
                 </span>
               )}
             </div>
-            <p className="text-[#666] text-xs">
-              @{post.profiles.username} · {new Date(post.created_at).toLocaleDateString('fr-FR')}
-            </p>
+            <div className="flex items-center gap-2 text-[#666] text-xs">
+              <span>@{post.profiles.username}</span>
+              <span>·</span>
+              <span>{new Date(post.created_at).toLocaleDateString('fr-FR')}</span>
+              {followersCount > 0 && (
+                <>
+                  <span>·</span>
+                  <div className="flex items-center gap-1 text-[#888]">
+                    <Users className="w-3 h-3" />
+                    <span className="font-semibold">{followersCount} abonnés</span>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
           {user && user.id !== post.profiles.id && (
             <div className="flex items-center gap-1">

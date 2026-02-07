@@ -15,6 +15,8 @@ import NewMembersCarousel from '../components/NewMembersCarousel';
 import ActivityFeed from '../components/ActivityFeed';
 import OnlineMembers from '../components/OnlineMembers';
 import TrendingTags from '../components/TrendingTags';
+import UserProfileCard from '../components/UserProfileCard';
+import MessagesInbox from '../components/MessagesInbox';
 
 interface CommunityPageProps {
   onNavigate: (page: string) => void;
@@ -65,7 +67,7 @@ interface Friend {
 }
 
 type CategoryType = 'posts' | 'forum' | 'marketplace' | 'casting' | 'announcements' | 'members';
-type FeedTab = 'global' | 'following' | 'recommended' | 'trending';
+type FeedTab = 'global' | 'following' | 'recommended' | 'trending' | 'messages';
 
 export default function CommunityPage({ onNavigate }: CommunityPageProps) {
   const { user } = useAuth();
@@ -290,6 +292,8 @@ export default function CommunityPage({ onNavigate }: CommunityPageProps) {
           {/* LEFT SIDEBAR */}
           <aside className="hidden lg:block">
             <div className="sticky top-24 space-y-4">
+              {user && <UserProfileCard onViewProfile={() => setSelectedUserId(user.id)} />}
+
               <div className="bg-[#111] rounded-2xl border border-[#222] overflow-hidden shadow-lg shadow-black/50">
                 <div className="p-4">
                   <div className="relative">
@@ -364,24 +368,6 @@ export default function CommunityPage({ onNavigate }: CommunityPageProps) {
 
               <TrendingTags />
 
-              {user && (
-                <div className="bg-[#111] rounded-2xl border border-[#222] overflow-hidden shadow-lg shadow-black/50">
-                  <div className="p-4">
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={`https://ui-avatars.com/api/?name=${user.email}&background=ef4444&color=fff&size=48`}
-                        alt="Profile"
-                        className="w-12 h-12 rounded-full ring-2 ring-streetiz-red/50"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-white font-bold text-sm truncate">{user.email?.split('@')[0]}</p>
-                        <p className="text-[#666] text-xs">Membre Streetiz</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
               {selectedCategory === 'members' && <MemberSearch onViewProfile={setSelectedUserId} />}
             </div>
           </aside>
@@ -435,11 +421,24 @@ export default function CommunityPage({ onNavigate }: CommunityPageProps) {
                     <Flame className="w-4 h-4" />
                     Tendances
                   </button>
+                  <button
+                    onClick={() => setSelectedFeedTab('messages')}
+                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${
+                      selectedFeedTab === 'messages'
+                        ? 'bg-gradient-to-r from-streetiz-red to-red-600 text-white shadow-lg shadow-streetiz-red/30'
+                        : 'text-[#888] hover:text-white hover:bg-[#1a1a1a]'
+                    }`}
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    Messages
+                  </button>
                 </div>
 
-                <NewMembersCarousel onViewProfile={setSelectedUserId} />
+                {selectedFeedTab !== 'messages' && <NewMembersCarousel onViewProfile={setSelectedUserId} />}
 
-                {loading ? (
+                {selectedFeedTab === 'messages' ? (
+                  <MessagesInbox onViewProfile={setSelectedUserId} />
+                ) : loading ? (
                   <div className="flex justify-center py-12">
                     <div className="w-12 h-12 border-4 border-streetiz-red/20 border-t-streetiz-red rounded-full animate-spin" />
                   </div>
