@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
   Plus, MessageSquare, ShoppingBag, Briefcase, FileText, MapPin, ChevronDown,
-  Search, Users as UsersIcon, Home, TrendingUp, MessageCircle
+  Search, Users as UsersIcon, Home, TrendingUp, MessageCircle, Flame, Sparkles
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,6 +11,10 @@ import MemberSearch from '../components/MemberSearch';
 import ProfilePage from './ProfilePage';
 import CreateContentModal from '../components/CreateContentModal';
 import ChatWindow from '../components/ChatWindow';
+import NewMembersCarousel from '../components/NewMembersCarousel';
+import ActivityFeed from '../components/ActivityFeed';
+import OnlineMembers from '../components/OnlineMembers';
+import TrendingTags from '../components/TrendingTags';
 
 interface CommunityPageProps {
   onNavigate: (page: string) => void;
@@ -61,7 +65,7 @@ interface Friend {
 }
 
 type CategoryType = 'posts' | 'forum' | 'marketplace' | 'casting' | 'announcements' | 'members';
-type FeedTab = 'global' | 'following';
+type FeedTab = 'global' | 'following' | 'recommended' | 'trending';
 
 export default function CommunityPage({ onNavigate }: CommunityPageProps) {
   const { user } = useAuth();
@@ -280,18 +284,18 @@ export default function CommunityPage({ onNavigate }: CommunityPageProps) {
 
   return (
     <div className="min-h-screen bg-[#0D0D0D] pt-20">
-      <div className="max-w-[1800px] mx-auto px-4 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] xl:grid-cols-[300px_1fr_340px] gap-6">
+      <div className="max-w-[1900px] mx-auto px-4 lg:px-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] xl:grid-cols-[320px_1fr_360px] gap-6">
 
           {/* LEFT SIDEBAR */}
           <aside className="hidden lg:block">
             <div className="sticky top-24 space-y-4">
-              <div className="bg-[#111] rounded-2xl border border-[#222] overflow-hidden">
+              <div className="bg-[#111] rounded-2xl border border-[#222] overflow-hidden shadow-lg shadow-black/50">
                 <div className="p-4">
                   <div className="relative">
                     <button
                       onClick={() => setShowCreateMenu(!showCreateMenu)}
-                      className="w-full bg-streetiz-red hover:bg-red-600 text-white font-black py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors"
+                      className="w-full bg-gradient-to-r from-streetiz-red to-red-600 hover:from-red-600 hover:to-streetiz-red text-white font-black py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-streetiz-red/30 hover:shadow-streetiz-red/50 hover:scale-[1.02]"
                     >
                       <Plus className="w-5 h-5" />
                       CRÉER
@@ -299,7 +303,7 @@ export default function CommunityPage({ onNavigate }: CommunityPageProps) {
                     </button>
 
                     {showCreateMenu && (
-                      <div className="absolute top-full left-0 right-0 mt-2 bg-[#0a0a0a] border border-[#222] rounded-xl overflow-hidden shadow-xl z-10">
+                      <div className="absolute top-full left-0 right-0 mt-2 bg-[#0a0a0a] border border-[#222] rounded-xl overflow-hidden shadow-2xl z-50">
                         {createActions.map((action) => {
                           const Icon = action.icon;
                           return (
@@ -322,9 +326,9 @@ export default function CommunityPage({ onNavigate }: CommunityPageProps) {
                 </div>
               </div>
 
-              <div className="bg-[#111] rounded-2xl border border-[#222] overflow-hidden">
+              <div className="bg-[#111] rounded-2xl border border-[#222] overflow-hidden shadow-lg shadow-black/50">
                 <div className="p-4 border-b border-[#222]">
-                  <h3 className="text-white font-black text-sm uppercase">Categories</h3>
+                  <h3 className="text-white font-black text-sm uppercase tracking-wider">Navigation</h3>
                 </div>
                 <div className="p-2">
                   {categories.map((cat) => {
@@ -335,7 +339,7 @@ export default function CommunityPage({ onNavigate }: CommunityPageProps) {
                         onClick={() => setSelectedCategory(cat.id)}
                         className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl transition-all ${
                           selectedCategory === cat.id
-                            ? 'bg-streetiz-red text-white'
+                            ? 'bg-gradient-to-r from-streetiz-red to-red-600 text-white shadow-lg shadow-streetiz-red/30'
                             : 'text-[#888] hover:bg-[#1a1a1a] hover:text-white'
                         }`}
                       >
@@ -344,7 +348,11 @@ export default function CommunityPage({ onNavigate }: CommunityPageProps) {
                           <span className="text-sm font-semibold">{cat.label}</span>
                         </div>
                         {cat.badge > 0 && (
-                          <span className="bg-streetiz-red text-white text-xs font-bold px-2 py-1 rounded-full min-w-[20px] text-center">
+                          <span className={`text-xs font-bold px-2 py-1 rounded-full min-w-[20px] text-center ${
+                            selectedCategory === cat.id
+                              ? 'bg-white/20 text-white'
+                              : 'bg-streetiz-red text-white'
+                          }`}>
                             {cat.badge}
                           </span>
                         )}
@@ -354,61 +362,95 @@ export default function CommunityPage({ onNavigate }: CommunityPageProps) {
                 </div>
               </div>
 
+              <TrendingTags />
+
+              {user && (
+                <div className="bg-[#111] rounded-2xl border border-[#222] overflow-hidden shadow-lg shadow-black/50">
+                  <div className="p-4">
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={`https://ui-avatars.com/api/?name=${user.email}&background=ef4444&color=fff&size=48`}
+                        alt="Profile"
+                        className="w-12 h-12 rounded-full ring-2 ring-streetiz-red/50"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white font-bold text-sm truncate">{user.email?.split('@')[0]}</p>
+                        <p className="text-[#666] text-xs">Membre Streetiz</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {selectedCategory === 'members' && <MemberSearch onViewProfile={setSelectedUserId} />}
             </div>
           </aside>
 
           {/* MAIN FEED */}
           <main className="min-h-screen">
-            <div className="mb-6">
-              <h1 className="text-4xl md:text-5xl font-black mb-2">
-                <span className="text-white">LA </span>
-                <span className="text-streetiz-red drop-shadow-[0_0_20px_rgba(239,68,68,0.5)]">COMMUNAUTÉ</span>
-              </h1>
-              <p className="text-[#888] text-lg">
-                {selectedCategory === 'posts' ? 'Fil d\'actualité' :
-                 selectedCategory === 'forum' ? 'Forum discussions' :
-                 selectedCategory === 'marketplace' ? 'Acheter et vendre' :
-                 selectedCategory === 'casting' ? 'Opportunités et jobs' :
-                 selectedCategory === 'announcements' ? 'Annonces' :
-                 'Rechercher des membres'}
-              </p>
-            </div>
-
             {selectedCategory === 'posts' && (
               <>
-                <div className="flex items-center gap-2 mb-6 bg-[#111] rounded-xl p-1 border border-[#222] w-fit">
+                <div className="flex flex-wrap items-center gap-2 mb-6 bg-[#111] rounded-2xl p-2 border border-[#222] shadow-lg shadow-black/50">
                   <button
                     onClick={() => setSelectedFeedTab('global')}
-                    className={`px-6 py-2.5 rounded-lg font-bold text-sm transition-all ${
+                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${
                       selectedFeedTab === 'global'
-                        ? 'bg-streetiz-red text-white'
-                        : 'text-[#888] hover:text-white'
+                        ? 'bg-gradient-to-r from-streetiz-red to-red-600 text-white shadow-lg shadow-streetiz-red/30'
+                        : 'text-[#888] hover:text-white hover:bg-[#1a1a1a]'
                     }`}
                   >
+                    <Home className="w-4 h-4" />
                     Feed Principal
                   </button>
                   <button
                     onClick={() => setSelectedFeedTab('following')}
-                    className={`px-6 py-2.5 rounded-lg font-bold text-sm transition-all ${
+                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${
                       selectedFeedTab === 'following'
-                        ? 'bg-streetiz-red text-white'
-                        : 'text-[#888] hover:text-white'
+                        ? 'bg-gradient-to-r from-streetiz-red to-red-600 text-white shadow-lg shadow-streetiz-red/30'
+                        : 'text-[#888] hover:text-white hover:bg-[#1a1a1a]'
                     }`}
                   >
+                    <UsersIcon className="w-4 h-4" />
                     Mes Abonnements
                   </button>
+                  <button
+                    onClick={() => setSelectedFeedTab('recommended')}
+                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${
+                      selectedFeedTab === 'recommended'
+                        ? 'bg-gradient-to-r from-streetiz-red to-red-600 text-white shadow-lg shadow-streetiz-red/30'
+                        : 'text-[#888] hover:text-white hover:bg-[#1a1a1a]'
+                    }`}
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    Recommandés
+                  </button>
+                  <button
+                    onClick={() => setSelectedFeedTab('trending')}
+                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${
+                      selectedFeedTab === 'trending'
+                        ? 'bg-gradient-to-r from-streetiz-red to-red-600 text-white shadow-lg shadow-streetiz-red/30'
+                        : 'text-[#888] hover:text-white hover:bg-[#1a1a1a]'
+                    }`}
+                  >
+                    <Flame className="w-4 h-4" />
+                    Tendances
+                  </button>
                 </div>
+
+                <NewMembersCarousel onViewProfile={setSelectedUserId} />
 
                 {loading ? (
                   <div className="flex justify-center py-12">
                     <div className="w-12 h-12 border-4 border-streetiz-red/20 border-t-streetiz-red rounded-full animate-spin" />
                   </div>
                 ) : posts.length === 0 ? (
-                  <div className="bg-[#111] rounded-2xl border border-[#222] p-12 text-center">
+                  <div className="bg-[#111] rounded-2xl border border-[#222] p-12 text-center shadow-lg shadow-black/50">
                     <Home className="w-16 h-16 text-[#333] mx-auto mb-4" />
                     <h3 className="text-white font-black text-2xl mb-3">
-                      {selectedFeedTab === 'following' ? 'Aucun post de vos abonnements' : 'Aucun post pour le moment'}
+                      {selectedFeedTab === 'following' ? 'Aucun post de vos abonnements' :
+                       selectedFeedTab === 'trending' ? 'Aucun post tendance' :
+                       selectedFeedTab === 'recommended' ? 'Aucune recommandation' :
+                       'Aucun post pour le moment'}
                     </h3>
                     <p className="text-[#666] mb-6">
                       {selectedFeedTab === 'following'
@@ -418,14 +460,14 @@ export default function CommunityPage({ onNavigate }: CommunityPageProps) {
                     {user && (
                       <button
                         onClick={() => setCreateModalType('post')}
-                        className="bg-streetiz-red hover:bg-red-600 text-white font-bold py-3 px-6 rounded-full transition-colors"
+                        className="bg-gradient-to-r from-streetiz-red to-red-600 hover:from-red-600 hover:to-streetiz-red text-white font-bold py-3 px-6 rounded-full transition-all shadow-lg shadow-streetiz-red/30"
                       >
                         Créer un post
                       </button>
                     )}
                   </div>
                 ) : (
-                  <div className="space-y-6">
+                  <div className="space-y-4">
                     {posts.map((post) => (
                       <FeedPost
                         key={post.id}
@@ -434,6 +476,8 @@ export default function CommunityPage({ onNavigate }: CommunityPageProps) {
                         onComment={handleComment}
                         onShare={handleShare}
                         onSave={handleSave}
+                        onViewProfile={setSelectedUserId}
+                        onMessage={handleOpenChat}
                       />
                     ))}
                   </div>
@@ -461,34 +505,24 @@ export default function CommunityPage({ onNavigate }: CommunityPageProps) {
           {/* RIGHT SIDEBAR */}
           <aside className="hidden xl:block">
             <div className="sticky top-24 space-y-4">
-              <div className="bg-[#111] rounded-2xl border border-[#222] overflow-hidden">
-                <div className="p-4 border-b border-[#222] flex items-center justify-between">
-                  <h3 className="text-white font-black text-sm uppercase">Amis</h3>
-                  {user && friends.length > 0 && (
-                    <span className="bg-green-500/20 text-green-400 text-xs font-bold px-2 py-1 rounded-full">
-                      {friends.filter(f => f.online_status === 'online').length} en ligne
-                    </span>
-                  )}
-                </div>
+              <OnlineMembers
+                onViewProfile={setSelectedUserId}
+                onOpenChat={handleOpenChat}
+              />
 
-                <div className="max-h-[600px] overflow-y-auto">
-                  {!user ? (
-                    <div className="p-6 text-center">
-                      <UsersIcon className="w-12 h-12 text-[#333] mx-auto mb-3" />
-                      <p className="text-[#666] text-sm mb-4">Connectez-vous pour voir vos amis</p>
-                      <button
-                        onClick={() => onNavigate('login')}
-                        className="bg-streetiz-red hover:bg-red-600 text-white font-bold py-2 px-4 rounded-full text-sm transition-all"
-                      >
-                        Se connecter
-                      </button>
-                    </div>
-                  ) : friends.length === 0 ? (
-                    <div className="p-6 text-center">
-                      <UsersIcon className="w-12 h-12 text-[#333] mx-auto mb-3" />
-                      <p className="text-[#666] text-sm">Aucun ami pour le moment</p>
-                    </div>
-                  ) : (
+              <ActivityFeed onViewProfile={setSelectedUserId} />
+
+              {user && friends.length > 0 && (
+                <div className="bg-[#111] rounded-2xl border border-[#222] overflow-hidden shadow-lg shadow-black/50">
+                  <div className="p-4 border-b border-[#222] flex items-center justify-between">
+                    <h3 className="text-white font-black text-sm uppercase tracking-wider">Mes Amis</h3>
+                    <span className="bg-green-500/20 text-green-400 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                      {friends.filter(f => f.online_status === 'online').length}
+                    </span>
+                  </div>
+
+                  <div className="max-h-[300px] overflow-y-auto">
                     <div className="p-2">
                       {friends
                         .sort((a, b) => {
@@ -496,46 +530,47 @@ export default function CommunityPage({ onNavigate }: CommunityPageProps) {
                           if (a.online_status !== 'online' && b.online_status === 'online') return 1;
                           return 0;
                         })
+                        .slice(0, 6)
                         .map((friend) => (
                           <div
                             key={friend.id}
-                            className="flex items-center gap-3 p-3 rounded-xl hover:bg-[#1a1a1a] transition-colors group"
+                            className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-[#1a1a1a] transition-colors group"
                           >
                             <button
                               onClick={() => setSelectedUserId(friend.id)}
                               className="relative flex-shrink-0"
                             >
                               <img
-                                src={friend.avatar_url || `https://ui-avatars.com/api/?name=${friend.username}&background=ef4444&color=fff&size=40`}
+                                src={friend.avatar_url || `https://ui-avatars.com/api/?name=${friend.username}&background=ef4444&color=fff&size=36`}
                                 alt={friend.username}
-                                className="w-10 h-10 rounded-full object-cover"
+                                className="w-9 h-9 rounded-full object-cover"
                               />
                               {friend.online_status === 'online' && (
-                                <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[#111] rounded-full" />
+                                <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-[#111] rounded-full" />
                               )}
                             </button>
                             <button
                               onClick={() => setSelectedUserId(friend.id)}
-                              className="flex-1 text-left"
+                              className="flex-1 text-left min-w-0"
                             >
-                              <p className="text-white text-sm font-semibold truncate">
+                              <p className="text-white text-xs font-semibold truncate">
                                 {friend.display_name || friend.username}
                               </p>
-                              <p className="text-[#666] text-xs">@{friend.username}</p>
+                              <p className="text-[#666] text-[10px] truncate">@{friend.username}</p>
                             </button>
                             <button
                               onClick={() => handleOpenChat(friend.id, friend.display_name || friend.username, friend.avatar_url)}
-                              className="opacity-0 group-hover:opacity-100 w-8 h-8 bg-streetiz-red hover:bg-red-600 rounded-full flex items-center justify-center transition-all"
+                              className="opacity-0 group-hover:opacity-100 w-7 h-7 bg-streetiz-red hover:bg-red-600 rounded-full flex items-center justify-center transition-all flex-shrink-0"
                               title="Message"
                             >
-                              <MessageCircle className="w-4 h-4 text-white" />
+                              <MessageCircle className="w-3.5 h-3.5 text-white" />
                             </button>
                           </div>
                         ))}
                     </div>
-                  )}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </aside>
         </div>
