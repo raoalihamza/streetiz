@@ -36,8 +36,10 @@ export default function MessagesInbox({ onViewProfile }: MessagesInboxProps) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadConversations();
-  }, []);
+    if (user) {
+      loadConversations();
+    }
+  }, [user]);
 
   useEffect(() => {
     if (selectedConversation) {
@@ -45,41 +47,111 @@ export default function MessagesInbox({ onViewProfile }: MessagesInboxProps) {
     }
   }, [selectedConversation]);
 
+  useEffect(() => {
+    if (!user || !selectedConversation) return;
+
+    const channel = supabase
+      .channel(`messages:${selectedConversation}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${selectedConversation}`,
+        },
+        (payload) => {
+          const newMsg = payload.new as any;
+          if (newMsg.sender_id !== user.id) {
+            const formattedMessage: Message = {
+              id: newMsg.id,
+              sender_id: newMsg.sender_id,
+              content: newMsg.content,
+              created_at: newMsg.created_at,
+              read: false,
+            };
+            setMessages((prev) => [...prev, formattedMessage]);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, selectedConversation]);
+
   const loadConversations = async () => {
     if (!user) return;
 
     try {
-      const { data: friendsData } = await supabase
-        .from('friendships')
-        .select(`
-          friend_id,
-          profiles!friendships_friend_id_fkey (
-            id,
-            username,
-            display_name,
-            avatar_url,
-            profile_extensions (online_status)
-          )
-        `)
-        .eq('user_id', user.id)
-        .eq('status', 'accepted')
-        .limit(20);
+      const { data: convData, error: convError } = await supabase
+        .from('conversations')
+        .select('*')
+        .contains('participant_ids', [user.id])
+        .order('last_message_at', { ascending: false });
 
-      const mockConversations: Conversation[] = (friendsData || []).map((f: any, idx: number) => ({
-        id: f.profiles.id,
-        recipient_id: f.profiles.id,
-        recipient_name: f.profiles.display_name || f.profiles.username,
-        recipient_avatar: f.profiles.avatar_url,
-        last_message: idx === 0 ? 'Salut! Tu viens à la soirée ce soir?' :
-                      idx === 1 ? 'Merci pour le mix!' :
-                      idx === 2 ? 'On se voit demain?' :
-                      'Hey!',
-        last_message_time: new Date(Date.now() - idx * 3600000).toISOString(),
-        unread_count: idx < 2 ? idx + 1 : 0,
-        is_online: f.profiles.profile_extensions?.[0]?.online_status === 'online',
-      }));
+      if (convError) throw convError;
 
-      setConversations(mockConversations);
+      if (convData && convData.length > 0) {
+        const allParticipantIds = Array.from(
+          new Set(convData.flatMap(c => c.participant_ids))
+        ).filter(id => id !== user.id);
+
+        if (allParticipantIds.length > 0) {
+          const { data: profilesData } = await supabase
+            .from('profiles')
+            .select('id, username, display_name, avatar_url')
+            .in('id', allParticipantIds);
+
+          const { data: extensionsData } = await supabase
+            .from('profile_extensions')
+            .select('user_id, online_status')
+            .in('user_id', allParticipantIds);
+
+          const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+          const extensionsMap = new Map(extensionsData?.map(e => [e.user_id, e.online_status]) || []);
+
+          const conversationIds = convData.map(c => c.id);
+          const { data: messagesData } = await supabase
+            .from('messages')
+            .select('*')
+            .in('conversation_id', conversationIds)
+            .order('created_at', { ascending: false });
+
+          const lastMessagesMap = new Map();
+          convData.forEach(conv => {
+            const convMessages = messagesData?.filter(m => m.conversation_id === conv.id) || [];
+            if (convMessages.length > 0) {
+              lastMessagesMap.set(conv.id, convMessages[0]);
+            }
+          });
+
+          const conversationsList: Conversation[] = convData.map(conv => {
+            const otherParticipantId = conv.participant_ids.find(id => id !== user.id) || '';
+            const profile = profilesMap.get(otherParticipantId);
+            const lastMessage = lastMessagesMap.get(conv.id);
+            const unreadMessages = messagesData?.filter(m =>
+              m.conversation_id === conv.id &&
+              m.sender_id !== user.id &&
+              !m.read_by?.includes(user.id)
+            ) || [];
+
+            return {
+              id: conv.id,
+              recipient_id: otherParticipantId,
+              recipient_name: profile?.display_name || profile?.username || 'Unknown',
+              recipient_avatar: profile?.avatar_url || null,
+              last_message: lastMessage?.content || 'Aucun message',
+              last_message_time: lastMessage?.created_at || conv.created_at,
+              unread_count: unreadMessages.length,
+              is_online: extensionsMap.get(otherParticipantId) === 'online',
+            };
+          });
+
+          setConversations(conversationsList);
+        }
+      }
     } catch (error) {
       console.error('Error loading conversations:', error);
     } finally {
@@ -88,39 +160,75 @@ export default function MessagesInbox({ onViewProfile }: MessagesInboxProps) {
   };
 
   const loadMessages = async (conversationId: string) => {
-    const mockMessages: Message[] = [
-      {
-        id: '1',
-        sender_id: conversationId,
-        content: 'Salut! Tu viens à la soirée ce soir?',
-        created_at: new Date(Date.now() - 3600000).toISOString(),
-        read: true,
-      },
-      {
-        id: '2',
-        sender_id: user?.id || '',
-        content: 'Oui bien sûr! À quelle heure?',
-        created_at: new Date(Date.now() - 1800000).toISOString(),
-        read: true,
-      },
-    ];
+    if (!user) return;
 
-    setMessages(mockMessages);
+    try {
+      const { data: messagesData, error } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+
+      const formattedMessages: Message[] = (messagesData || []).map(m => ({
+        id: m.id,
+        sender_id: m.sender_id,
+        content: m.content,
+        created_at: m.created_at,
+        read: m.read_by?.includes(user.id) || m.sender_id === user.id,
+      }));
+
+      setMessages(formattedMessages);
+
+      await supabase
+        .from('messages')
+        .update({ read_by: [...(messagesData?.[0]?.read_by || []), user.id] })
+        .eq('conversation_id', conversationId)
+        .neq('sender_id', user.id)
+        .not('read_by', 'cs', `{${user.id}}`);
+    } catch (error) {
+      console.error('Error loading messages:', error);
+    }
   };
 
   const sendMessage = async () => {
     if (!messageText.trim() || !selectedConversation || !user) return;
 
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      sender_id: user.id,
-      content: messageText,
-      created_at: new Date().toISOString(),
-      read: false,
-    };
+    try {
+      const { data, error } = await supabase
+        .from('messages')
+        .insert({
+          conversation_id: selectedConversation,
+          sender_id: user.id,
+          content: messageText.trim(),
+          read_by: [user.id],
+        })
+        .select()
+        .single();
 
-    setMessages([...messages, newMessage]);
-    setMessageText('');
+      if (error) throw error;
+
+      const newMessage: Message = {
+        id: data.id,
+        sender_id: data.sender_id,
+        content: data.content,
+        created_at: data.created_at,
+        read: true,
+      };
+
+      setMessages([...messages, newMessage]);
+      setMessageText('');
+
+      await supabase
+        .from('conversations')
+        .update({ last_message_at: new Date().toISOString() })
+        .eq('id', selectedConversation);
+
+      loadConversations();
+    } catch (error) {
+      console.error('Error sending message:', error);
+    }
   };
 
   const getTimeAgo = (date: string) => {
