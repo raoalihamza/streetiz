@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import MusicPostCard from '../components/MusicPostCard';
 import MusicSidebarWidgets from '../components/MusicSidebarWidgets';
+import ReelsHighlights from '../components/ReelsHighlights';
 
 interface MusicPost {
   id: string;
@@ -41,6 +42,7 @@ interface Event {
 export default function MusicPage() {
   const [loading, setLoading] = useState(true);
   const [posts, setPosts] = useState<MusicPost[]>([]);
+  const [reels, setReels] = useState<MusicPost[]>([]);
   const [topTracks, setTopTracks] = useState<any[]>([]);
   const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
 
@@ -69,7 +71,16 @@ export default function MusicPage() {
           .limit(5),
       ]);
 
-      if (postsData.data) setPosts(postsData.data);
+      if (postsData.data) {
+        const instagramPosts = postsData.data.filter(
+          (post: MusicPost) => post.content_type === 'instagram'
+        );
+        const otherPosts = postsData.data.filter(
+          (post: MusicPost) => post.content_type !== 'instagram'
+        );
+        setReels(instagramPosts);
+        setPosts(otherPosts);
+      }
 
       if (tracksData.data) {
         const formattedTracks = tracksData.data.map((track: Track, index: number) => ({
@@ -124,29 +135,53 @@ export default function MusicPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-8">
             <div>
+              <ReelsHighlights
+                reels={reels.map((reel) => ({
+                  id: reel.id,
+                  title: reel.title,
+                  artist: reel.artist,
+                  coverUrl: reel.cover_url,
+                  instagramUrl: reel.instagram_url,
+                  likes: reel.likes,
+                  plays: reel.plays,
+                  tags: reel.tags,
+                }))}
+                onReelClick={(reel) => {
+                  if (reel.instagramUrl) {
+                    window.open(reel.instagramUrl, '_blank');
+                  }
+                }}
+              />
+
               {posts.length === 0 ? (
                 <div className="text-center py-12">
                   <p className="text-gray-500">Aucun post pour le moment</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {posts.map((post) => (
-                    <MusicPostCard
-                      key={post.id}
-                      id={post.id}
-                      title={post.title}
-                      artist={post.artist}
-                      description={post.description}
-                      contentType={post.content_type}
-                      youtubeEmbedId={post.youtube_embed_id}
-                      soundcloudUrl={post.soundcloud_url}
-                      instagramUrl={post.instagram_url}
-                      likes={post.likes}
-                      coverUrl={post.cover_url}
-                      tags={post.tags}
-                    />
-                  ))}
-                </div>
+                <>
+                  <div className="mb-6">
+                    <h2 className="text-2xl font-black text-white mb-1">Latest Tracks & Videos</h2>
+                    <p className="text-gray-400 text-sm">YouTube et SoundCloud</p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {posts.map((post) => (
+                      <MusicPostCard
+                        key={post.id}
+                        id={post.id}
+                        title={post.title}
+                        artist={post.artist}
+                        description={post.description}
+                        contentType={post.content_type}
+                        youtubeEmbedId={post.youtube_embed_id}
+                        soundcloudUrl={post.soundcloud_url}
+                        instagramUrl={post.instagram_url}
+                        likes={post.likes}
+                        coverUrl={post.cover_url}
+                        tags={post.tags}
+                      />
+                    ))}
+                  </div>
+                </>
               )}
             </div>
 
