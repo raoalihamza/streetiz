@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { User, MapPin, Users, FileText, Eye } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -23,6 +24,7 @@ interface UserProfileCardProps {
 
 export default function UserProfileCard({ onViewProfile }: UserProfileCardProps) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [stats, setStats] = useState<UserStats>({
     followers_count: 0,
     following_count: 0,
@@ -30,6 +32,14 @@ export default function UserProfileCard({ onViewProfile }: UserProfileCardProps)
   });
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const handleViewProfile = () => {
+    if (profile?.username) {
+      navigate(`/profile/${profile.username}`);
+    } else if (onViewProfile) {
+      onViewProfile();
+    }
+  };
 
   useEffect(() => {
     if (user) {
@@ -190,7 +200,7 @@ export default function UserProfileCard({ onViewProfile }: UserProfileCardProps)
         </div>
 
         <button
-          onClick={onViewProfile}
+          onClick={handleViewProfile}
           className="w-full bg-gradient-to-r from-streetiz-red to-red-600 hover:from-red-600 hover:to-streetiz-red text-white font-bold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-streetiz-red/30 hover:scale-[1.02]"
         >
           <Eye className="w-4 h-4" />

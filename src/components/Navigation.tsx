@@ -1,19 +1,28 @@
 import { useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, User, Search, Bell, LogOut, Settings } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 interface NavigationProps {
-  currentPage: string;
-  onNavigate: (page: string) => void;
+  currentPage?: string;
+  onNavigate?: (page: string) => void;
 }
 
-export default function Navigation({ currentPage, onNavigate }: NavigationProps) {
+export default function Navigation({ currentPage: propCurrentPage, onNavigate: propOnNavigate }: NavigationProps = {}) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const { user, profile, signOut } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const currentPage = propCurrentPage || location.pathname.split('/')[1] || 'home';
 
   const handleNavigate = (page: string) => {
-    onNavigate(page);
+    if (propOnNavigate) {
+      propOnNavigate(page);
+    } else {
+      navigate(`/${page === 'home' ? '' : page}`);
+    }
     setMobileMenuOpen(false);
   };
 

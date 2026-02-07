@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Plus, MessageSquare, ShoppingBag, Briefcase, FileText, MapPin, ChevronDown,
   Search, Users as UsersIcon, Home, TrendingUp, MessageCircle, Flame, Sparkles
@@ -8,7 +9,6 @@ import { useAuth } from '../contexts/AuthContext';
 import FeedPost from '../components/FeedPost';
 import SeedDataButton from '../components/SeedDataButton';
 import MemberSearch from '../components/MemberSearch';
-import ProfilePage from './ProfilePage';
 import CreateContentModal from '../components/CreateContentModal';
 import ChatWindow from '../components/ChatWindow';
 import NewMembersCarousel from '../components/NewMembersCarousel';
@@ -71,6 +71,7 @@ type FeedTab = 'global' | 'following' | 'recommended' | 'trending' | 'messages';
 
 export default function CommunityPage({ onNavigate }: CommunityPageProps) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [posts, setPosts] = useState<Post[]>([]);
   const [friends, setFriends] = useState<Friend[]>([]);
   const [loading, setLoading] = useState(true);
@@ -78,8 +79,23 @@ export default function CommunityPage({ onNavigate }: CommunityPageProps) {
   const [selectedFeedTab, setSelectedFeedTab] = useState<FeedTab>('global');
   const [showCreateMenu, setShowCreateMenu] = useState(false);
   const [createModalType, setCreateModalType] = useState<'post' | 'forum' | 'announcement' | 'marketplace' | 'workshop' | null>(null);
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [openChats, setOpenChats] = useState<Array<{ id: string; name: string; avatar: string | null }>>([]);
+
+  const handleViewProfile = async (userId: string) => {
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('id', userId)
+        .single();
+
+      if (profile?.username) {
+        navigate(`/profile/${profile.username}`);
+      }
+    } catch (error) {
+      console.error('Error navigating to profile:', error);
+    }
+  };
 
   useEffect(() => {
     if (selectedCategory === 'posts') {
@@ -292,7 +308,7 @@ export default function CommunityPage({ onNavigate }: CommunityPageProps) {
           {/* LEFT SIDEBAR */}
           <aside className="hidden lg:block">
             <div className="sticky top-24 space-y-4">
-              {user && <UserProfileCard onViewProfile={() => setSelectedUserId(user.id)} />}
+              {user && <UserProfileCard onViewProfile={() => handleViewProfile(user.id)} />}
 
               <div className="bg-[#111] rounded-2xl border border-[#222] overflow-hidden shadow-lg shadow-black/50">
                 <div className="p-4">
@@ -368,7 +384,7 @@ export default function CommunityPage({ onNavigate }: CommunityPageProps) {
 
               <TrendingTags />
 
-              {selectedCategory === 'members' && <MemberSearch onViewProfile={setSelectedUserId} />}
+              {selectedCategory === 'members' && <MemberSearch onViewProfile={handleViewProfile} />}
             </div>
           </aside>
 
@@ -434,10 +450,10 @@ export default function CommunityPage({ onNavigate }: CommunityPageProps) {
                   </button>
                 </div>
 
-                {selectedFeedTab !== 'messages' && <NewMembersCarousel onViewProfile={setSelectedUserId} />}
+                {selectedFeedTab !== 'messages' && <NewMembersCarousel onViewProfile={handleViewProfile} />}
 
                 {selectedFeedTab === 'messages' ? (
-                  <MessagesInbox onViewProfile={setSelectedUserId} />
+                  <MessagesInbox onViewProfile={handleViewProfile} />
                 ) : loading ? (
                   <div className="flex justify-center py-12">
                     <div className="w-12 h-12 border-4 border-streetiz-red/20 border-t-streetiz-red rounded-full animate-spin" />
@@ -475,7 +491,7 @@ export default function CommunityPage({ onNavigate }: CommunityPageProps) {
                         onComment={handleComment}
                         onShare={handleShare}
                         onSave={handleSave}
-                        onViewProfile={setSelectedUserId}
+                        onViewProfile={handleViewProfile}
                         onMessage={handleOpenChat}
                       />
                     ))}
@@ -505,11 +521,11 @@ export default function CommunityPage({ onNavigate }: CommunityPageProps) {
           <aside className="hidden xl:block">
             <div className="sticky top-24 space-y-4">
               <OnlineMembers
-                onViewProfile={setSelectedUserId}
+                onViewProfile={handleViewProfile}
                 onOpenChat={handleOpenChat}
               />
 
-              <ActivityFeed onViewProfile={setSelectedUserId} />
+              <ActivityFeed onViewProfile={handleViewProfile} />
 
               {user && friends.length > 0 && (
                 <div className="bg-[#111] rounded-2xl border border-[#222] overflow-hidden shadow-lg shadow-black/50">
@@ -536,7 +552,7 @@ export default function CommunityPage({ onNavigate }: CommunityPageProps) {
                             className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-[#1a1a1a] transition-colors group"
                           >
                             <button
-                              onClick={() => setSelectedUserId(friend.id)}
+                              onClick={() => handleViewProfile(friend.id)}
                               className="relative flex-shrink-0"
                             >
                               <img
@@ -549,7 +565,7 @@ export default function CommunityPage({ onNavigate }: CommunityPageProps) {
                               )}
                             </button>
                             <button
-                              onClick={() => setSelectedUserId(friend.id)}
+                              onClick={() => handleViewProfile(friend.id)}
                               className="flex-1 text-left min-w-0"
                             >
                               <p className="text-white text-xs font-semibold truncate">
@@ -587,13 +603,6 @@ export default function CommunityPage({ onNavigate }: CommunityPageProps) {
         />
       )}
 
-      {selectedUserId && (
-        <ProfilePage
-          profileId={selectedUserId}
-          onClose={() => setSelectedUserId(null)}
-          onOpenChat={handleOpenChat}
-        />
-      )}
 
       {openChats.map((chat, index) => (
         <div key={chat.id} style={{ right: `${20 + index * 420}px` }} className="fixed bottom-0 z-40">

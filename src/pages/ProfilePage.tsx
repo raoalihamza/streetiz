@@ -1,15 +1,18 @@
 import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   MapPin, Globe, Users, Edit, MessageCircle, UserPlus, UserCheck, X,
-  Instagram, Music, Video, ExternalLink, Play, Image as ImageIcon, Film
+  Instagram, Music, Video, ExternalLink, Play, Image as ImageIcon, Film,
+  Share2, MoreVertical, ArrowLeft
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import FeedPost from '../components/FeedPost';
+import Navigation from '../components/Navigation';
 
 interface ProfilePageProps {
-  profileId: string;
-  onClose: () => void;
+  profileId?: string;
+  onClose?: () => void;
   onOpenChat?: (userId: string, username: string, avatar: string | null) => void;
 }
 
@@ -67,7 +70,9 @@ interface Post {
 
 type TabType = 'about' | 'media' | 'posts';
 
-export default function ProfilePage({ profileId, onClose, onOpenChat }: ProfilePageProps) {
+export default function ProfilePage({ profileId: propProfileId, onClose, onOpenChat }: ProfilePageProps) {
+  const { username } = useParams<{ username: string }>();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [media, setMedia] = useState<Media[]>([]);
@@ -80,16 +85,30 @@ export default function ProfilePage({ profileId, onClose, onOpenChat }: ProfileP
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [playingVideo, setPlayingVideo] = useState<string | null>(null);
 
-  const isOwnProfile = user?.id === profileId;
+  const profileId = propProfileId;
+  const isModalMode = !!onClose;
+  const isOwnProfile = user?.id === profile?.id;
 
   useEffect(() => {
-    loadProfile();
-    loadMedia();
-    if (user) {
+    if (username) {
+      loadProfileByUsername();
+    } else if (profileId) {
+      loadProfile();
+    }
+  }, [username, profileId]);
+
+  useEffect(() => {
+    if (profile?.id && user) {
       checkFollowStatus();
       checkFriendshipStatus();
     }
-  }, [profileId, user]);
+  }, [profile?.id, user]);
+
+  useEffect(() => {
+    if (profile?.id) {
+      loadMedia();
+    }
+  }, [profile?.id]);
 
   useEffect(() => {
     if (activeTab === 'posts') {
@@ -97,7 +116,26 @@ export default function ProfilePage({ profileId, onClose, onOpenChat }: ProfileP
     }
   }, [activeTab]);
 
+  const loadProfileByUsername = async () => {
+    if (!username) return;
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('username', username)
+        .single();
+
+      if (error) throw error;
+      setProfile(data);
+    } catch (error) {
+      console.error('Error loading profile by username:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const loadProfile = async () => {
+    if (!profileId) return;
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -115,11 +153,12 @@ export default function ProfilePage({ profileId, onClose, onOpenChat }: ProfileP
   };
 
   const loadMedia = async () => {
+    if (!profile?.id) return;
     try {
       const { data, error } = await supabase
         .from('profile_media')
         .select('*')
-        .eq('user_id', profileId)
+        .eq('user_id', profile.id)
         .order('display_order');
 
       if (error) throw error;
@@ -130,6 +169,7 @@ export default function ProfilePage({ profileId, onClose, onOpenChat }: ProfileP
   };
 
   const loadPosts = async () => {
+    if (!profile?.id) return;
     try {
       const { data, error } = await supabase
         .from('posts')
@@ -137,7 +177,7 @@ export default function ProfilePage({ profileId, onClose, onOpenChat }: ProfileP
           *,
           profiles (id, username, display_name, avatar_url)
         `)
-        .eq('user_id', profileId)
+        .eq('user_id', profile.id)
         .order('created_at', { ascending: false })
         .limit(20);
 
@@ -149,13 +189,13 @@ export default function ProfilePage({ profileId, onClose, onOpenChat }: ProfileP
   };
 
   const checkFollowStatus = async () => {
-    if (!user) return;
+    if (!user || !profile?.id) return;
     try {
       const { data } = await supabase
         .from('user_follows')
         .select('id')
         .eq('follower_id', user.id)
-        .eq('following_id', profileId)
+        .eq('following_id', profile.id)
         .maybeSingle();
 
       setIsFollowing(!!data);
@@ -165,12 +205,12 @@ export default function ProfilePage({ profileId, onClose, onOpenChat }: ProfileP
   };
 
   const checkFriendshipStatus = async () => {
-    if (!user) return;
+    if (!user || !profile?.id) return;
     try {
       const { data } = await supabase
         .from('friendships')
         .select('status')
-        .or(`and(user_id.eq.${user.id},friend_id.eq.${profileId}),and(user_id.eq.${profileId},friend_id.eq.${user.id})`)
+        .or(`and(user_id.eq.${user.id},friend_id.eq.${profile.id}),and(user_id.eq.${profile.id},friend_id.eq.${user.id})`)
         .maybeSingle();
 
       if (data) {
@@ -183,7 +223,7 @@ export default function ProfilePage({ profileId, onClose, onOpenChat }: ProfileP
   };
 
   const handleFollow = async () => {
-    if (!user) return;
+    if (!user || !profile?.id) return;
 
     try {
       if (isFollowing) {
@@ -191,12 +231,12 @@ export default function ProfilePage({ profileId, onClose, onOpenChat }: ProfileP
           .from('user_follows')
           .delete()
           .eq('follower_id', user.id)
-          .eq('following_id', profileId);
+          .eq('following_id', profile.id);
         setIsFollowing(false);
       } else {
         await supabase
           .from('user_follows')
-          .insert({ follower_id: user.id, following_id: profileId });
+          .insert({ follower_id: user.id, following_id: profile.id });
         setIsFollowing(true);
       }
     } catch (error) {
@@ -205,14 +245,14 @@ export default function ProfilePage({ profileId, onClose, onOpenChat }: ProfileP
   };
 
   const handleAddFriend = async () => {
-    if (!user || friendshipStatus !== 'none') return;
+    if (!user || !profile?.id || friendshipStatus !== 'none') return;
 
     try {
       await supabase
         .from('friendships')
         .insert({
           user_id: user.id,
-          friend_id: profileId,
+          friend_id: profile.id,
           status: 'pending'
         });
       setFriendshipStatus('pending');
@@ -233,20 +273,45 @@ export default function ProfilePage({ profileId, onClose, onOpenChat }: ProfileP
   };
 
   if (loading) {
-    return (
-      <div className="fixed inset-0 bg-black/95 backdrop-blur-sm z-50 flex items-center justify-center">
+    const loadingContent = (
+      <div className="flex items-center justify-center h-screen">
         <div className="w-12 h-12 border-4 border-streetiz-red/20 border-t-streetiz-red rounded-full animate-spin" />
+      </div>
+    );
+
+    if (isModalMode) {
+      return <div className="fixed inset-0 bg-black/95 backdrop-blur-sm z-50">{loadingContent}</div>;
+    }
+    return (
+      <div className="min-h-screen bg-[#0a0a0a]">
+        <Navigation />
+        {loadingContent}
       </div>
     );
   }
 
   if (!profile) {
-    return (
-      <div className="fixed inset-0 bg-black/95 backdrop-blur-sm z-50 flex items-center justify-center">
+    const notFoundContent = (
+      <div className="flex items-center justify-center h-screen">
         <div className="text-center">
-          <p className="text-white text-xl">Profile not found</p>
-          <button onClick={onClose} className="mt-4 text-streetiz-red hover:underline">Close</button>
+          <p className="text-white text-xl mb-4">Profile not found</p>
+          <button
+            onClick={() => isModalMode ? onClose?.() : navigate('/community')}
+            className="bg-gradient-to-r from-streetiz-red to-red-600 text-white px-6 py-3 rounded-xl font-bold"
+          >
+            {isModalMode ? 'Close' : 'Back to Community'}
+          </button>
         </div>
+      </div>
+    );
+
+    if (isModalMode) {
+      return <div className="fixed inset-0 bg-black/95 backdrop-blur-sm z-50">{notFoundContent}</div>;
+    }
+    return (
+      <div className="min-h-screen bg-[#0a0a0a]">
+        <Navigation />
+        {notFoundContent}
       </div>
     );
   }
@@ -254,18 +319,38 @@ export default function ProfilePage({ profileId, onClose, onOpenChat }: ProfileP
   const photos = media.filter(m => m.media_type === 'photo');
   const videos = media.filter(m => m.media_type === 'video');
 
-  return (
-    <div className="fixed inset-0 bg-black/95 backdrop-blur-sm z-50 overflow-y-auto">
-      <div className="min-h-screen">
-        <button
-          onClick={onClose}
-          className="fixed top-6 right-6 w-12 h-12 bg-[#111] hover:bg-[#222] border border-[#333] rounded-full flex items-center justify-center transition-colors z-10"
-        >
-          <X className="w-6 h-6 text-white" />
-        </button>
+  const containerClass = isModalMode
+    ? "fixed inset-0 bg-black/95 backdrop-blur-sm z-50 overflow-y-auto"
+    : "min-h-screen bg-[#0a0a0a]";
 
-        <div className="max-w-5xl mx-auto p-6">
-          <div className="bg-[#0a0a0a] rounded-3xl border border-[#222] overflow-hidden">
+  return (
+    <div className={containerClass}>
+      {!isModalMode && <Navigation />}
+
+      <div className="min-h-screen">
+        {isModalMode ? (
+          <button
+            onClick={onClose}
+            className="fixed top-6 right-6 w-12 h-12 bg-[#111] hover:bg-[#222] border border-[#333] rounded-full flex items-center justify-center transition-colors z-10"
+          >
+            <X className="w-6 h-6 text-white" />
+          </button>
+        ) : (
+          <div className="sticky top-20 z-10 bg-[#0a0a0a]/95 backdrop-blur-sm border-b border-[#222]">
+            <div className="max-w-5xl mx-auto px-6 py-4">
+              <button
+                onClick={() => navigate('/community')}
+                className="flex items-center gap-2 text-white hover:text-streetiz-red transition-colors font-bold"
+              >
+                <ArrowLeft className="w-5 h-5" />
+                Retour à la communauté
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className={`max-w-5xl mx-auto ${isModalMode ? 'p-6' : 'px-4 pt-6 pb-12'}`}>
+          <div className={`bg-[#0a0a0a] ${isModalMode ? 'rounded-3xl' : 'rounded-2xl'} border border-[#222] overflow-hidden`}>
             <div
               className="h-64 bg-gradient-to-br from-streetiz-red/20 to-[#111] relative"
               style={profile.cover_banner_url ? { backgroundImage: `url(${profile.cover_banner_url})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
