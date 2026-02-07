@@ -40,7 +40,7 @@ const CITIES = [
   { name: 'Amsterdam', country: 'Netherlands', imageUrl: 'https://images.pexels.com/photos/208733/pexels-photo-208733.jpeg?auto=compress&cs=tinysrgb&w=800', eventCount: 14 },
 ];
 
-const CATEGORIES = ['ALL', 'Party', 'Festival', 'Battle', 'Workshop', 'Concert', 'Fashion Event', 'Paris Fashion Week'];
+const CATEGORIES = ['ALL', 'Party', 'Festival', 'Battle', 'Workshop', 'Concert', 'Fashion Event'];
 const DATE_FILTERS = ['Tonight', 'This Week', 'This Month'];
 const COUNTRIES = [
   { name: 'France', flag: '🇫🇷' },
