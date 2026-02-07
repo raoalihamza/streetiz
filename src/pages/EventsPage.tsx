@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Calendar, MapPin, Plus, TrendingUp, Award, Star, Map } from 'lucide-react';
+import { Calendar, MapPin, Plus, TrendingUp, Award, Star, Map, SlidersHorizontal, Check } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import EventModal from '../components/EventModal';
 import CompactEventCard from '../components/CompactEventCard';
+import EventFiltersDrawer, { AdvancedFilters } from '../components/EventFiltersDrawer';
 
 interface Event {
   id: string;
@@ -36,15 +37,35 @@ const CITIES = [
 
 const CATEGORIES = ['ALL', 'Party', 'Festival', 'Battle', 'Workshop', 'Concert'];
 const DATE_FILTERS = ['Tonight', 'This Week', 'This Month'];
+const COUNTRIES = [
+  { name: 'France', flag: '🇫🇷' },
+  { name: 'Belgium', flag: '🇧🇪' },
+  { name: 'Spain', flag: '🇪🇸' },
+  { name: 'Germany', flag: '🇩🇪' },
+  { name: 'Portugal', flag: '🇵🇹' },
+  { name: 'Netherlands', flag: '🇳🇱' },
+];
 
 export default function EventsPage({ onNavigate }: EventsPageProps) {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
+  const [selectedCountry, setSelectedCountry] = useState<string>('');
   const [selectedCity, setSelectedCity] = useState<string>('');
   const [selectedDateFilter, setSelectedDateFilter] = useState<string>('');
   const [selectedStyle, setSelectedStyle] = useState<string>('');
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [isFiltersDrawerOpen, setIsFiltersDrawerOpen] = useState(false);
+  const [showCountryDropdown, setShowCountryDropdown] = useState(false);
+  const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilters>({
+    priceMin: 0,
+    priceMax: 500,
+    startDate: '',
+    endDate: '',
+    eventType: '',
+    city: '',
+    distance: 50,
+  });
   const { isOrganizer } = useAuth();
 
   const featuredOrganizers = [
@@ -120,12 +141,13 @@ export default function EventsPage({ onNavigate }: EventsPageProps) {
 
   const resetFilters = () => {
     setSelectedCategory('ALL');
+    setSelectedCountry('');
     setSelectedCity('');
     setSelectedDateFilter('');
     setSelectedStyle('');
   };
 
-  const hasActiveFilters = selectedCategory !== 'ALL' || selectedCity || selectedDateFilter || selectedStyle;
+  const hasActiveFilters = selectedCategory !== 'ALL' || selectedCountry || selectedCity || selectedDateFilter || selectedStyle;
 
   if (loading) {
     return (
@@ -141,73 +163,125 @@ export default function EventsPage({ onNavigate }: EventsPageProps) {
         <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-[1fr_350px] gap-8">
             <div>
-              <div className="bg-[#0F0F0F]/95 backdrop-blur-md py-3 mb-4 border-b border-[#222]">
-                <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1">
+              <div className="bg-[#151515] backdrop-blur-md rounded-2xl p-4 mb-6 border border-[#222]">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="text-xs font-bold text-gray-500 uppercase tracking-wider">Event Categories</div>
+                  <button
+                    onClick={() => setIsFiltersDrawerOpen(true)}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-[#1a1a1a] hover:bg-[#282828] rounded-lg text-xs font-bold text-white transition-all"
+                  >
+                    <SlidersHorizontal className="w-3.5 h-3.5" />
+                    More Filters
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2">
                   <button
                     onClick={resetFilters}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex-shrink-0 ${
+                    className={`px-5 py-2.5 rounded-full text-sm font-bold transition-all whitespace-nowrap flex-shrink-0 transform hover:scale-105 ${
                       !hasActiveFilters
-                        ? 'bg-streetiz-red text-white'
-                        : 'bg-[#181818] text-gray-400 hover:bg-[#282828] hover:text-white'
+                        ? 'bg-streetiz-red text-white shadow-lg shadow-red-500/30'
+                        : 'bg-[#1a1a1a] text-gray-400 hover:bg-[#282828] hover:text-white'
                     }`}
                   >
-                    ALL EVENTS
+                    {!hasActiveFilters && <Check className="w-4 h-4 inline-block mr-1.5" />}
+                    All Events
                   </button>
-
-                  <div className="w-px h-5 bg-[#333] flex-shrink-0"></div>
 
                   {CATEGORIES.filter(cat => cat !== 'ALL').map((category) => (
                     <button
                       key={category}
                       onClick={() => setSelectedCategory(category)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-all whitespace-nowrap flex-shrink-0 ${
+                      className={`px-5 py-2.5 rounded-full text-sm font-bold uppercase transition-all whitespace-nowrap flex-shrink-0 transform hover:scale-105 ${
                         selectedCategory === category
-                          ? 'bg-streetiz-red text-white'
-                          : 'bg-[#181818] text-gray-400 hover:bg-[#282828] hover:text-white'
+                          ? 'bg-streetiz-red text-white shadow-lg shadow-red-500/30'
+                          : 'bg-[#1a1a1a] text-gray-400 hover:bg-[#282828] hover:text-white'
                       }`}
                     >
+                      {selectedCategory === category && <Check className="w-4 h-4 inline-block mr-1.5" />}
                       {category}
                     </button>
                   ))}
+                </div>
 
-                  <div className="w-px h-5 bg-[#333] flex-shrink-0"></div>
+                <div className="h-px bg-gradient-to-r from-transparent via-[#333] to-transparent my-4"></div>
 
-                  {CITIES.map((city) => (
+                <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+                  <div className="relative flex-shrink-0">
+                    <button
+                      onClick={() => setShowCountryDropdown(!showCountryDropdown)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+                        selectedCountry
+                          ? 'bg-streetiz-red text-white shadow-md shadow-red-500/20'
+                          : 'bg-[#1a1a1a] text-gray-400 hover:bg-[#282828] hover:text-white'
+                      }`}
+                    >
+                      {selectedCountry ? (
+                        <>
+                          <span>{COUNTRIES.find(c => c.name === selectedCountry)?.flag}</span>
+                          <span>{selectedCountry}</span>
+                        </>
+                      ) : (
+                        <>
+                          <MapPin className="w-3 h-3" />
+                          <span>Country</span>
+                        </>
+                      )}
+                    </button>
+                    {showCountryDropdown && (
+                      <div className="absolute top-full mt-2 left-0 bg-[#1a1a1a] border border-[#333] rounded-lg shadow-xl z-50 min-w-[150px] animate-scale-in">
+                        {COUNTRIES.map((country) => (
+                          <button
+                            key={country.name}
+                            onClick={() => {
+                              setSelectedCountry(selectedCountry === country.name ? '' : country.name);
+                              setShowCountryDropdown(false);
+                            }}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-gray-400 hover:bg-[#282828] hover:text-white transition-colors first:rounded-t-lg last:rounded-b-lg"
+                          >
+                            <span>{country.flag}</span>
+                            <span>{country.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="w-px h-4 bg-[#333] flex-shrink-0"></div>
+
+                  {CITIES.slice(0, 6).map((city) => (
                     <button
                       key={city.name}
                       onClick={() => setSelectedCity(selectedCity === city.name ? '' : city.name)}
-                      className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex-shrink-0 ${
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex-shrink-0 transform hover:scale-105 ${
                         selectedCity === city.name
-                          ? 'bg-streetiz-red text-white'
-                          : 'bg-[#181818] text-gray-400 hover:bg-[#282828] hover:text-white'
+                          ? 'bg-streetiz-red text-white shadow-md shadow-red-500/20'
+                          : 'bg-[#1a1a1a] text-gray-400 hover:bg-[#282828] hover:text-white'
                       }`}
                     >
+                      {selectedCity === city.name && <Check className="w-3 h-3" />}
                       <MapPin className="w-3 h-3" />
                       <span>{city.name}</span>
                     </button>
                   ))}
 
-                  <div className="w-px h-5 bg-[#333] flex-shrink-0"></div>
+                  <div className="w-px h-4 bg-[#333] flex-shrink-0 mx-1"></div>
 
                   {DATE_FILTERS.map((filter) => (
                     <button
                       key={filter}
                       onClick={() => setSelectedDateFilter(selectedDateFilter === filter ? '' : filter)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex-shrink-0 ${
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex-shrink-0 transform hover:scale-105 ${
                         selectedDateFilter === filter
-                          ? 'bg-streetiz-red text-white'
-                          : 'bg-[#181818] text-gray-400 hover:bg-[#282828] hover:text-white'
+                          ? 'bg-streetiz-red text-white shadow-md shadow-red-500/20'
+                          : 'bg-[#1a1a1a] text-gray-400 hover:bg-[#282828] hover:text-white'
                       }`}
                     >
+                      {selectedDateFilter === filter && <Check className="w-3 h-3" />}
+                      <Calendar className="w-3 h-3" />
                       {filter}
                     </button>
                   ))}
-
-                  {hasActiveFilters && (
-                    <div className="text-xs text-gray-500 ml-2 flex-shrink-0">
-                      <span className="font-bold text-white">{filteredEvents.length}</span> events
-                    </div>
-                  )}
                 </div>
               </div>
 
@@ -225,29 +299,37 @@ export default function EventsPage({ onNavigate }: EventsPageProps) {
               </div>
 
               {filteredEvents.length === 0 ? (
-                <div className="text-center py-20 bg-[#111] rounded-2xl border border-[#222]">
+                <div className="text-center py-20 bg-[#111] rounded-2xl border border-[#222] animate-fade-in">
                   <Calendar className="w-16 h-16 text-[#333] mx-auto mb-4" />
                   <p className="text-gray-400 text-xl font-semibold">No events found</p>
                   <p className="text-gray-600 text-sm mt-2">Try adjusting your filters</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredEvents.map((event) => {
+                  {filteredEvents.map((event, index) => {
                     const { date, time } = formatDateTime(event.event_date);
                     return (
-                      <CompactEventCard
+                      <div
                         key={event.id}
-                        id={event.id}
-                        title={event.title}
-                        category={event.category || 'Event'}
-                        date={date}
-                        time={time}
-                        location={event.location || 'Location TBA'}
-                        price={event.price}
-                        imageUrl={event.featured_image || ''}
-                        ticketUrl={event.ticket_url || undefined}
-                        onClick={() => setSelectedEvent(event)}
-                      />
+                        className="animate-fade-in"
+                        style={{
+                          animationDelay: `${index * 0.05}s`,
+                          animationFillMode: 'both'
+                        }}
+                      >
+                        <CompactEventCard
+                          id={event.id}
+                          title={event.title}
+                          category={event.category || 'Event'}
+                          date={date}
+                          time={time}
+                          location={event.location || 'Location TBA'}
+                          price={event.price}
+                          imageUrl={event.featured_image || ''}
+                          ticketUrl={event.ticket_url || undefined}
+                          onClick={() => setSelectedEvent(event)}
+                        />
+                      </div>
                     );
                   })}
                 </div>
@@ -361,6 +443,13 @@ export default function EventsPage({ onNavigate }: EventsPageProps) {
       {selectedEvent && (
         <EventModal event={selectedEvent} onClose={() => setSelectedEvent(null)} />
       )}
+
+      <EventFiltersDrawer
+        isOpen={isFiltersDrawerOpen}
+        onClose={() => setIsFiltersDrawerOpen(false)}
+        currentFilters={advancedFilters}
+        onApplyFilters={(filters) => setAdvancedFilters(filters)}
+      />
     </>
   );
 }
