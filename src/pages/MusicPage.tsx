@@ -149,32 +149,27 @@ export default function MusicPage() {
       <div className="pt-24 pb-12">
         <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-8">
-            <h1 className="text-4xl font-black text-white mb-2">Music Feed</h1>
-            <p className="text-gray-400">
-              Découvre les derniers sons, vidéos et contenus de la scène électronique
-            </p>
+            <ReelsHighlights
+              reels={reels.map((reel) => ({
+                id: reel.id,
+                title: reel.title,
+                artist: reel.artist,
+                coverUrl: reel.cover_url,
+                instagramUrl: reel.instagram_url,
+                likes: reel.likes,
+                plays: reel.plays,
+                tags: reel.tags,
+              }))}
+              onReelClick={(reel) => {
+                if (reel.instagramUrl) {
+                  window.open(reel.instagramUrl, '_blank');
+                }
+              }}
+            />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-8">
             <div>
-              <ReelsHighlights
-                reels={reels.map((reel) => ({
-                  id: reel.id,
-                  title: reel.title,
-                  artist: reel.artist,
-                  coverUrl: reel.cover_url,
-                  instagramUrl: reel.instagram_url,
-                  likes: reel.likes,
-                  plays: reel.plays,
-                  tags: reel.tags,
-                }))}
-                onReelClick={(reel) => {
-                  if (reel.instagramUrl) {
-                    window.open(reel.instagramUrl, '_blank');
-                  }
-                }}
-              />
-
               {posts.length === 0 ? (
                 <div className="text-center py-12">
                   <p className="text-gray-500">Aucun post pour le moment</p>

@@ -1,6 +1,7 @@
 import { Heart, Share2, Play, Download, ShoppingCart } from 'lucide-react';
 import { useState } from 'react';
 import SoundCloudModal from './SoundCloudModal';
+import YouTubeModal from './YouTubeModal';
 
 interface MusicPostCardProps {
   id: string;
@@ -47,6 +48,7 @@ export default function MusicPostCard({
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(likes);
   const [showSoundCloudModal, setShowSoundCloudModal] = useState(false);
+  const [showYouTubeModal, setShowYouTubeModal] = useState(false);
 
   const handleLike = () => {
     setIsLiked(!isLiked);
@@ -54,7 +56,12 @@ export default function MusicPostCard({
     onLike?.();
   };
 
-  const handlePlay = () => {
+  const handlePlayYouTube = () => {
+    setShowYouTubeModal(true);
+    onPlay?.();
+  };
+
+  const handlePlaySoundCloud = () => {
     setShowSoundCloudModal(true);
     onPlay?.();
   };
@@ -62,15 +69,37 @@ export default function MusicPostCard({
   const renderMedia = () => {
     if (contentType === 'youtube' && youtubeEmbedId) {
       return (
-        <div className="relative w-full pb-[56.25%] bg-black rounded-xl overflow-hidden">
-          <iframe
-            className="absolute top-0 left-0 w-full h-full"
-            src={`https://www.youtube.com/embed/${youtubeEmbedId}`}
+        <>
+          <div className="relative w-full aspect-video bg-black rounded-t-xl overflow-hidden group/yt cursor-pointer">
+            {coverUrl && (
+              <img
+                src={coverUrl}
+                alt={title}
+                className="w-full h-full object-cover opacity-60 group-hover/yt:opacity-40 transition-opacity"
+              />
+            )}
+            <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover/yt:bg-black/50 transition-colors">
+              <button
+                onClick={handlePlayYouTube}
+                className="w-16 h-16 bg-streetiz-red rounded-full flex items-center justify-center hover:bg-red-600 hover:scale-110 transition-all"
+              >
+                <Play className="w-7 h-7 text-white fill-white ml-1" />
+              </button>
+            </div>
+            <div className="absolute top-3 right-3 px-2.5 py-1 bg-red-600 rounded-full flex items-center gap-1.5">
+              <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
+              <span className="text-white text-xs font-bold">YouTube</span>
+            </div>
+          </div>
+
+          <YouTubeModal
+            isOpen={showYouTubeModal}
+            onClose={() => setShowYouTubeModal(false)}
+            videoId={youtubeEmbedId}
             title={title}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
+            artist={artist}
           />
-        </div>
+        </>
       );
     }
 
@@ -87,7 +116,7 @@ export default function MusicPostCard({
             )}
             <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover/sound:bg-black/50 transition-colors">
               <button
-                onClick={handlePlay}
+                onClick={handlePlaySoundCloud}
                 className="w-16 h-16 bg-orange-500 rounded-full flex items-center justify-center hover:bg-orange-600 hover:scale-110 transition-all"
               >
                 <Play className="w-7 h-7 text-white fill-white ml-1" />
