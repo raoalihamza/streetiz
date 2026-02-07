@@ -1,4 +1,4 @@
-import { Heart, MessageCircle, Share2, Play } from 'lucide-react';
+import { Heart, Share2, Play, Download, ShoppingCart, ExternalLink } from 'lucide-react';
 import { useState } from 'react';
 
 interface MusicPostCardProps {
@@ -15,8 +15,12 @@ interface MusicPostCardProps {
   coverUrl?: string;
   tags?: string[];
   genre?: string;
+  downloadUrl?: string;
+  purchaseUrl?: string;
+  purchasePlatform?: 'beatport' | 'bandcamp' | 'other';
   onLike?: () => void;
   onComment?: () => void;
+  onPlay?: () => void;
 }
 
 export default function MusicPostCard({
@@ -32,16 +36,26 @@ export default function MusicPostCard({
   coverUrl,
   tags = [],
   genre,
+  downloadUrl,
+  purchaseUrl,
+  purchasePlatform = 'other',
   onLike,
   onComment,
+  onPlay,
 }: MusicPostCardProps) {
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(likes);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   const handleLike = () => {
     setIsLiked(!isLiked);
     setLikeCount(isLiked ? likeCount - 1 : likeCount + 1);
     onLike?.();
+  };
+
+  const handlePlay = () => {
+    setIsPlaying(!isPlaying);
+    onPlay?.();
   };
 
   const renderMedia = () => {
@@ -61,28 +75,40 @@ export default function MusicPostCard({
 
     if (contentType === 'soundcloud' && soundcloudUrl) {
       return (
-        <div className="relative w-full aspect-video bg-gradient-to-br from-orange-900/20 to-[#0a0a0a] rounded-t-xl overflow-hidden group/sound cursor-pointer">
-          {coverUrl && (
-            <img
-              src={coverUrl}
-              alt={title}
-              className="w-full h-full object-cover opacity-60 group-hover/sound:opacity-40 transition-opacity"
+        <div className="relative w-full aspect-video bg-gradient-to-br from-orange-900/20 to-[#0a0a0a] rounded-t-xl overflow-hidden group/sound">
+          {!isPlaying ? (
+            <>
+              {coverUrl && (
+                <img
+                  src={coverUrl}
+                  alt={title}
+                  className="w-full h-full object-cover opacity-60 group-hover/sound:opacity-40 transition-opacity"
+                />
+              )}
+              <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover/sound:bg-black/50 transition-colors">
+                <button
+                  onClick={handlePlay}
+                  className="w-16 h-16 bg-orange-500 rounded-full flex items-center justify-center hover:bg-orange-600 hover:scale-110 transition-all"
+                >
+                  <Play className="w-7 h-7 text-white fill-white ml-1" />
+                </button>
+              </div>
+              <div className="absolute top-3 right-3 px-2.5 py-1 bg-orange-500 rounded-full flex items-center gap-1.5">
+                <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
+                <span className="text-white text-xs font-bold">SoundCloud</span>
+              </div>
+            </>
+          ) : (
+            <iframe
+              width="100%"
+              height="100%"
+              scrolling="no"
+              frameBorder="no"
+              allow="autoplay"
+              src={`https://w.soundcloud.com/player/?url=${encodeURIComponent(soundcloudUrl)}&color=%23ff5500&auto_play=true&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false&visual=true`}
+              className="absolute inset-0"
             />
           )}
-          <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover/sound:bg-black/50 transition-colors">
-            <a
-              href={soundcloudUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-16 h-16 bg-orange-500 rounded-full flex items-center justify-center hover:bg-orange-600 hover:scale-110 transition-all"
-            >
-              <Play className="w-7 h-7 text-white fill-white ml-1" />
-            </a>
-          </div>
-          <div className="absolute top-3 right-3 px-2.5 py-1 bg-orange-500 rounded-full flex items-center gap-1.5">
-            <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
-            <span className="text-white text-xs font-bold">SoundCloud</span>
-          </div>
         </div>
       );
     }
@@ -151,9 +177,48 @@ export default function MusicPostCard({
             <span className="text-sm font-semibold">{likeCount}</span>
           </button>
 
-          <button className="flex items-center gap-1.5 text-gray-400 hover:text-white transition-colors">
-            <Share2 className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-2">
+            {downloadUrl && (
+              <a
+                href={downloadUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 text-green-500 hover:text-green-400 transition-colors group/dl"
+                title="Free Download"
+              >
+                <Download className="w-4 h-4 group-hover/dl:animate-bounce" />
+                <span className="text-xs font-semibold">Free</span>
+              </a>
+            )}
+
+            {purchaseUrl && (
+              <a
+                href={purchaseUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 text-blue-500 hover:text-blue-400 transition-colors"
+                title={`Buy on ${purchasePlatform === 'beatport' ? 'Beatport' : purchasePlatform === 'bandcamp' ? 'Bandcamp' : 'Store'}`}
+              >
+                {purchasePlatform === 'beatport' ? (
+                  <div className="flex items-center gap-1">
+                    <ShoppingCart className="w-4 h-4" />
+                    <span className="text-xs font-bold">BP</span>
+                  </div>
+                ) : purchasePlatform === 'bandcamp' ? (
+                  <div className="flex items-center gap-1">
+                    <ShoppingCart className="w-4 h-4" />
+                    <span className="text-xs font-bold">BC</span>
+                  </div>
+                ) : (
+                  <ShoppingCart className="w-4 h-4" />
+                )}
+              </a>
+            )}
+
+            <button className="flex items-center gap-1.5 text-gray-400 hover:text-white transition-colors">
+              <Share2 className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
     </article>

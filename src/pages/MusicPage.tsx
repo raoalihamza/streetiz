@@ -21,6 +21,9 @@ interface MusicPost {
   plays: number;
   is_featured: boolean;
   created_at: string;
+  download_url?: string;
+  purchase_url?: string;
+  purchase_platform?: 'beatport' | 'bandcamp' | 'other';
 }
 
 interface Track {
@@ -39,14 +42,26 @@ interface Event {
   banner_image?: string;
 }
 
+const GENRE_FILTERS = [
+  'All',
+  'Afro house',
+  'Electro',
+  'Melodic Techno',
+  'Hard Groove',
+  'House',
+  'Disco',
+  'Remix',
+  'Free Download',
+  'Live DJ'
+];
+
 export default function MusicPage() {
   const [loading, setLoading] = useState(true);
   const [posts, setPosts] = useState<MusicPost[]>([]);
   const [reels, setReels] = useState<MusicPost[]>([]);
   const [topTracks, setTopTracks] = useState<any[]>([]);
   const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
-  const [selectedGenre, setSelectedGenre] = useState<string>('all');
-  const [selectedType, setSelectedType] = useState<'all' | 'youtube' | 'soundcloud'>('all');
+  const [selectedGenre, setSelectedGenre] = useState<string>('All');
 
   useEffect(() => {
     loadAllContent();
@@ -116,12 +131,9 @@ export default function MusicPage() {
     }
   };
 
-  const genres = ['all', ...Array.from(new Set(posts.map(p => p.genre)))];
-
   const filteredPosts = posts.filter(post => {
-    const genreMatch = selectedGenre === 'all' || post.genre === selectedGenre;
-    const typeMatch = selectedType === 'all' || post.content_type === selectedType;
-    return genreMatch && typeMatch;
+    if (selectedGenre === 'All') return true;
+    return post.genre.toLowerCase() === selectedGenre.toLowerCase();
   });
 
   if (loading) {
@@ -180,57 +192,20 @@ export default function MusicPage() {
                       </span>
                     </div>
 
-                    <div className="flex flex-wrap gap-3">
-                      <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
+                      {GENRE_FILTERS.map((genre) => (
                         <button
-                          onClick={() => setSelectedType('all')}
+                          key={genre}
+                          onClick={() => setSelectedGenre(genre)}
                           className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
-                            selectedType === 'all'
+                            selectedGenre === genre
                               ? 'bg-streetiz-red text-white'
                               : 'bg-[#1a1a1a] text-gray-400 hover:text-white border border-gray-800'
                           }`}
                         >
-                          Tous
+                          {genre}
                         </button>
-                        <button
-                          onClick={() => setSelectedType('youtube')}
-                          className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
-                            selectedType === 'youtube'
-                              ? 'bg-streetiz-red text-white'
-                              : 'bg-[#1a1a1a] text-gray-400 hover:text-white border border-gray-800'
-                          }`}
-                        >
-                          YouTube
-                        </button>
-                        <button
-                          onClick={() => setSelectedType('soundcloud')}
-                          className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
-                            selectedType === 'soundcloud'
-                              ? 'bg-streetiz-red text-white'
-                              : 'bg-[#1a1a1a] text-gray-400 hover:text-white border border-gray-800'
-                          }`}
-                        >
-                          SoundCloud
-                        </button>
-                      </div>
-
-                      <div className="w-px bg-gray-800 mx-1" />
-
-                      <div className="flex gap-2 flex-wrap">
-                        {genres.map((genre) => (
-                          <button
-                            key={genre}
-                            onClick={() => setSelectedGenre(genre)}
-                            className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all capitalize ${
-                              selectedGenre === genre
-                                ? 'bg-streetiz-red text-white'
-                                : 'bg-[#1a1a1a] text-gray-400 hover:text-white border border-gray-800'
-                            }`}
-                          >
-                            {genre === 'all' ? 'Tous les genres' : genre}
-                          </button>
-                        ))}
-                      </div>
+                      ))}
                     </div>
                   </div>
 
@@ -255,6 +230,9 @@ export default function MusicPage() {
                           coverUrl={post.cover_url}
                           tags={post.tags}
                           genre={post.genre}
+                          downloadUrl={post.download_url}
+                          purchaseUrl={post.purchase_url}
+                          purchasePlatform={post.purchase_platform}
                         />
                       ))}
                     </div>
