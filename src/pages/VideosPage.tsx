@@ -260,105 +260,90 @@ export default function VideosPage() {
   return (
     <div className="min-h-screen bg-[#0D0D0D]">
       <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-5xl font-black text-white">
-              VIDÉOS <span className="text-streetiz-red">STREETIZ</span>
-            </h1>
+        <button
+          onClick={() => setViewMode(viewMode === 'feed' ? 'map' : 'feed')}
+          className="fixed top-24 right-8 z-40 flex items-center gap-2 px-5 py-3 bg-[#111] hover:bg-streetiz-red border border-[#333] hover:border-streetiz-red rounded-full font-bold text-white transition-all shadow-xl hover:shadow-streetiz-red/30 group"
+        >
+          {viewMode === 'feed' ? (
+            <>
+              <Map className="w-5 h-5 group-hover:scale-110 transition-transform" />
+              <span>Map</span>
+            </>
+          ) : (
+            <>
+              <Grid3x3 className="w-5 h-5 group-hover:scale-110 transition-transform" />
+              <span>Feed</span>
+            </>
+          )}
+        </button>
 
-            <button
-              onClick={() => setViewMode(viewMode === 'feed' ? 'map' : 'feed')}
-              className="fixed top-24 right-8 z-40 flex items-center gap-2 px-5 py-3 bg-[#111] hover:bg-streetiz-red border border-[#333] hover:border-streetiz-red rounded-full font-bold text-white transition-all shadow-xl hover:shadow-streetiz-red/30 group"
-            >
-              {viewMode === 'feed' ? (
-                <>
-                  <Map className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                  <span>Map</span>
-                </>
-              ) : (
-                <>
-                  <Grid3x3 className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                  <span>Feed</span>
-                </>
-              )}
-            </button>
-          </div>
-
-          <div className="relative mb-8">
-            <div className="bg-[#151515] rounded-2xl p-4 border border-[#282828]">
-              <div className="flex items-center gap-3 flex-wrap">
-                <div
-                  className={`relative flex-1 min-w-[300px] max-w-[60%] transition-all duration-300 ${
-                    isSearchFocused ? 'scale-[1.02]' : 'scale-100'
-                  }`}
-                >
-                  <Search className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors duration-300 ${
-                    isSearchFocused ? 'text-streetiz-red' : 'text-[#666]'
-                  }`} />
-                  <input
-                    type="text"
-                    placeholder="Search videos, artists, countries..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onFocus={() => setIsSearchFocused(true)}
-                    onBlur={() => setIsSearchFocused(false)}
-                    className={`w-full pl-12 pr-4 py-3 bg-[#0D0D0D] border-2 rounded-full text-white placeholder-[#666] focus:outline-none transition-all duration-300 ${
-                      isSearchFocused
-                        ? 'border-streetiz-red shadow-lg shadow-streetiz-red/20'
-                        : 'border-[#333] hover:border-[#444]'
-                    }`}
-                    style={{
-                      backdropFilter: 'blur(10px)',
-                      animation: isSearchFocused ? 'glow 2s ease-in-out infinite' : 'none',
-                    }}
-                  />
-                  {isSearchFocused && (
-                    <div className="absolute inset-0 rounded-full bg-gradient-to-r from-streetiz-red/20 via-transparent to-streetiz-red/20 pointer-events-none animate-pulse"></div>
-                  )}
-                </div>
-
-                <button
-                  onClick={() => setShowFiltersDrawer(!showFiltersDrawer)}
-                  className="flex items-center gap-2 px-5 py-3 bg-[#0D0D0D] border-2 border-[#333] hover:border-streetiz-red rounded-full text-white text-sm font-bold transition-all hover:shadow-lg hover:shadow-streetiz-red/20"
-                >
-                  <SlidersHorizontal className="w-4 h-4" />
-                  <span>Filters</span>
-                </button>
-
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="px-5 py-3 rounded-full bg-[#0D0D0D] text-white text-sm font-bold border-2 border-[#333] hover:border-streetiz-red focus:outline-none focus:border-streetiz-red transition-all cursor-pointer"
-                >
-                  <option value="newest">Newest</option>
-                  <option value="trending">Trending</option>
-                  <option value="mostviewed">Most Viewed</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="sticky top-0 z-30 bg-[#0D0D0D]/95 backdrop-blur-sm py-5 mb-8 -mx-4 px-4 border-b border-[#222]">
-          <div className="flex flex-wrap items-center gap-2">
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => {
-                  setSelectedCategory(cat);
-                }}
-                className={`px-4 py-2 rounded-full text-xs font-bold transition-all duration-300 transform ${
-                  selectedCategory === cat
-                    ? 'bg-streetiz-red text-white shadow-lg shadow-streetiz-red/40 scale-105 animate-bounce-subtle'
-                    : 'bg-[#1a1a1a] text-[#a0a0a0] hover:bg-[#222] hover:text-white hover:scale-105'
+        <div className="sticky top-0 z-30 bg-[#0D0D0D]/95 backdrop-blur-sm py-4 mb-8 -mx-4 px-4 border-b border-[#222]">
+          <div className="bg-[#151515] rounded-2xl p-3 border border-[#282828]">
+            <div className="flex items-center gap-2 flex-wrap">
+              <div
+                className={`relative flex-shrink-0 w-[280px] transition-all duration-300 ${
+                  isSearchFocused ? 'scale-[1.02]' : 'scale-100'
                 }`}
-                style={{
-                  animation: selectedCategory === cat ? 'bounce-subtle 0.5s ease-out' : 'none',
-                }}
               >
-                {cat}
+                <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors duration-300 ${
+                  isSearchFocused ? 'text-streetiz-red' : 'text-[#666]'
+                }`} />
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onFocus={() => setIsSearchFocused(true)}
+                  onBlur={() => setIsSearchFocused(false)}
+                  className={`w-full pl-9 pr-3 py-2 bg-[#0D0D0D] border-2 rounded-full text-white text-sm placeholder-[#666] focus:outline-none transition-all duration-300 ${
+                    isSearchFocused
+                      ? 'border-streetiz-red shadow-lg shadow-streetiz-red/20'
+                      : 'border-[#333] hover:border-[#444]'
+                  }`}
+                  style={{
+                    backdropFilter: 'blur(10px)',
+                    animation: isSearchFocused ? 'glow 2s ease-in-out infinite' : 'none',
+                  }}
+                />
+                {isSearchFocused && (
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-r from-streetiz-red/20 via-transparent to-streetiz-red/20 pointer-events-none animate-pulse"></div>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2 flex-1">
+                {categories.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setSelectedCategory(cat)}
+                    className={`px-3 py-2 rounded-full text-xs font-bold transition-all duration-300 transform whitespace-nowrap ${
+                      selectedCategory === cat
+                        ? 'bg-streetiz-red text-white shadow-lg shadow-streetiz-red/40 scale-105'
+                        : 'bg-[#1a1a1a] text-[#a0a0a0] hover:bg-[#222] hover:text-white hover:scale-105'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={() => setShowFiltersDrawer(!showFiltersDrawer)}
+                className="flex items-center gap-1.5 px-4 py-2 bg-[#0D0D0D] border-2 border-[#333] hover:border-streetiz-red rounded-full text-white text-xs font-bold transition-all hover:shadow-lg hover:shadow-streetiz-red/20 whitespace-nowrap"
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5" />
+                <span>Filters</span>
               </button>
-            ))}
+
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="px-4 py-2 rounded-full bg-[#0D0D0D] text-white text-xs font-bold border-2 border-[#333] hover:border-streetiz-red focus:outline-none focus:border-streetiz-red transition-all cursor-pointer whitespace-nowrap"
+              >
+                <option value="newest">Newest</option>
+                <option value="trending">Trending</option>
+                <option value="mostviewed">Most Viewed</option>
+              </select>
+            </div>
           </div>
         </div>
 
