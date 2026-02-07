@@ -15,7 +15,7 @@ import NewMembersCarousel from '../components/NewMembersCarousel';
 import ActivityFeed from '../components/ActivityFeed';
 import OnlineMembers from '../components/OnlineMembers';
 import TrendingTags from '../components/TrendingTags';
-import UserProfileCard from '../components/UserProfileCard';
+import ProfileStatsWidget from '../components/ProfileStatsWidget';
 import MessagesInbox from '../components/MessagesInbox';
 
 interface CommunityPageProps {
@@ -308,7 +308,7 @@ export default function CommunityPage({ onNavigate }: CommunityPageProps) {
           {/* LEFT SIDEBAR */}
           <aside className="hidden lg:block">
             <div className="sticky top-24 space-y-4">
-              {user && <UserProfileCard onViewProfile={() => handleViewProfile(user.id)} />}
+              {user && <ProfileStatsWidget />}
 
               <div className="bg-[#111] rounded-2xl border border-[#222] overflow-hidden shadow-lg shadow-black/50">
                 <div className="p-4">
