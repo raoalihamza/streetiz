@@ -9,6 +9,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import FeedPost from '../components/FeedPost';
 import Navigation from '../components/Navigation';
+import ProfileEditModal from '../components/ProfileEditModal';
 
 interface ProfilePageProps {
   profileId?: string;
@@ -84,6 +85,7 @@ export default function ProfilePage({ profileId: propProfileId, onClose, onOpenC
   const [friendshipStatus, setFriendshipStatus] = useState<'none' | 'pending' | 'accepted'>('none');
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [playingVideo, setPlayingVideo] = useState<string | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const profileId = propProfileId;
   const isModalMode = !!onClose;
@@ -373,7 +375,15 @@ export default function ProfilePage({ profileId: propProfileId, onClose, onOpenC
                 </div>
 
                 <div className="flex gap-3 mt-4 md:mt-0">
-                  {!isOwnProfile && user && (
+                  {isOwnProfile ? (
+                    <button
+                      onClick={() => setShowEditModal(true)}
+                      className="px-6 py-3 bg-gradient-to-r from-streetiz-red to-red-600 hover:from-red-600 hover:to-streetiz-red text-white rounded-full font-bold transition-all flex items-center gap-2"
+                    >
+                      <Edit className="w-4 h-4" />
+                      Edit Profile
+                    </button>
+                  ) : user && (
                     <>
                       <button
                         onClick={handleFollow}
@@ -711,6 +721,20 @@ export default function ProfilePage({ profileId: propProfileId, onClose, onOpenC
             onClick={(e) => e.stopPropagation()}
           />
         </div>
+      )}
+
+      {showEditModal && (
+        <ProfileEditModal
+          onClose={() => setShowEditModal(false)}
+          onSave={() => {
+            if (username) {
+              loadProfileByUsername();
+            } else if (profileId) {
+              loadProfile();
+            }
+            loadMedia();
+          }}
+        />
       )}
     </div>
   );
