@@ -379,18 +379,14 @@ export default function CommunityPage({ onNavigate }: CommunityPageProps) {
                       </button>
                     );
                   })}
-                </div>
-              </div>
 
-              <TrendingTags />
+                  <div className="my-2 border-t border-[#222]" />
 
-              <div className="bg-[#111] rounded-2xl border border-[#222] overflow-hidden shadow-lg shadow-black/50">
-                <div className="p-4 border-b border-[#222]">
-                  <h3 className="text-white font-black text-sm uppercase tracking-wider">Messages</h3>
-                </div>
-                <div className="p-2">
                   <button
-                    onClick={() => setSelectedFeedTab('messages')}
+                    onClick={() => {
+                      setSelectedCategory('posts');
+                      setSelectedFeedTab('messages');
+                    }}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
                       selectedFeedTab === 'messages'
                         ? 'bg-gradient-to-r from-streetiz-red to-red-600 text-white shadow-lg shadow-streetiz-red/30'
@@ -402,6 +398,8 @@ export default function CommunityPage({ onNavigate }: CommunityPageProps) {
                   </button>
                 </div>
               </div>
+
+              <TrendingTags />
 
               {selectedCategory === 'members' && <MemberSearch onViewProfile={handleViewProfile} />}
             </div>
