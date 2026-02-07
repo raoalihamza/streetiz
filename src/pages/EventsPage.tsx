@@ -1,9 +1,8 @@
-import { useEffect, useState, useRef } from 'react';
-import { Calendar, MapPin, Search, Plus, TrendingUp, Award, Star, ChevronLeft, ChevronRight, Map } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Calendar, MapPin, Plus, TrendingUp, Award, Star, Map } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import EventModal from '../components/EventModal';
-import CityExplorer from '../components/CityExplorer';
 import CompactEventCard from '../components/CompactEventCard';
 
 interface Event {
@@ -37,23 +36,16 @@ const CITIES = [
 
 const CATEGORIES = ['ALL', 'Party', 'Festival', 'Battle', 'Workshop', 'Concert'];
 const DATE_FILTERS = ['Tonight', 'This Week', 'This Month'];
-const MUSIC_STYLES = ['Electro', 'Techno', 'House', 'Afro House'];
 
 export default function EventsPage({ onNavigate }: EventsPageProps) {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [selectedCity, setSelectedCity] = useState<string>('');
   const [selectedDateFilter, setSelectedDateFilter] = useState<string>('');
   const [selectedStyle, setSelectedStyle] = useState<string>('');
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const { isOrganizer } = useAuth();
-
-  const categoryScrollRef = useRef<HTMLDivElement>(null);
-  const cityScrollRef = useRef<HTMLDivElement>(null);
-  const dateScrollRef = useRef<HTMLDivElement>(null);
-  const styleScrollRef = useRef<HTMLDivElement>(null);
 
   const featuredOrganizers = [
     { name: 'Red Bull BC One', logo: '🏆', events: 24 },
@@ -94,9 +86,6 @@ export default function EventsPage({ onNavigate }: EventsPageProps) {
   };
 
   const filteredEvents = events.filter((event) => {
-    const matchesSearch = event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      event.location?.toLowerCase().includes(searchQuery.toLowerCase());
-
     let matchesDateFilter = true;
     if (selectedDateFilter) {
       const eventDate = new Date(event.event_date);
@@ -118,10 +107,8 @@ export default function EventsPage({ onNavigate }: EventsPageProps) {
       }
     }
 
-    return matchesSearch && matchesDateFilter;
+    return matchesDateFilter;
   });
-
-  const trendingEvents = filteredEvents.slice(0, 6);
 
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -131,25 +118,14 @@ export default function EventsPage({ onNavigate }: EventsPageProps) {
     };
   };
 
-  const scroll = (ref: React.RefObject<HTMLDivElement>, direction: 'left' | 'right') => {
-    if (ref.current) {
-      const scrollAmount = 200;
-      ref.current.scrollBy({
-        left: direction === 'left' ? -scrollAmount : scrollAmount,
-        behavior: 'smooth',
-      });
-    }
-  };
-
   const resetFilters = () => {
     setSelectedCategory('ALL');
     setSelectedCity('');
     setSelectedDateFilter('');
     setSelectedStyle('');
-    setSearchQuery('');
   };
 
-  const hasActiveFilters = selectedCategory !== 'ALL' || selectedCity || selectedDateFilter || selectedStyle || searchQuery;
+  const hasActiveFilters = selectedCategory !== 'ALL' || selectedCity || selectedDateFilter || selectedStyle;
 
   if (loading) {
     return (
@@ -161,235 +137,75 @@ export default function EventsPage({ onNavigate }: EventsPageProps) {
 
   return (
     <>
-      <div className="min-h-screen bg-[#0F0F0F] pt-20 pb-12">
+      <div className="min-h-screen bg-[#0F0F0F] pt-24 pb-12">
         <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center py-8 mb-8">
-            <div className="inline-flex items-center bg-streetiz-red/10 border border-streetiz-red/20 px-4 py-1.5 rounded-full mb-4">
-              <Calendar className="w-4 h-4 text-streetiz-red mr-2" />
-              <span className="text-streetiz-red text-sm font-bold">EVENTS</span>
-            </div>
-            <h1 className="text-5xl md:text-7xl font-black mb-3">
-              <span className="text-white">EXPLORE </span>
-              <span className="text-streetiz-red drop-shadow-[0_0_20px_rgba(239,68,68,0.5)]">EVENTS</span>
-            </h1>
-            <p className="text-xl text-gray-400 mb-8">
-              Parties, festivals, battles and workshops you don't want to miss
-            </p>
-
-            <div className="max-w-3xl mx-auto mb-6">
-              <div className="relative">
-                <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-500" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search an event, a city, a venue..."
-                  className="w-full bg-[#111] border-2 border-[#282828] rounded-2xl py-4 pl-14 pr-6 text-white text-lg placeholder-gray-500 focus:outline-none focus:border-streetiz-red transition-colors"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-[#0A0A0A] border-y border-[#282828] py-6 mb-10 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-[1800px] mx-auto space-y-4">
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => scroll(categoryScrollRef, 'left')}
-                  className="w-8 h-8 bg-[#181818] hover:bg-[#282828] rounded-full flex items-center justify-center transition-colors flex-shrink-0"
-                >
-                  <ChevronLeft className="w-4 h-4 text-white" />
-                </button>
-                <div
-                  ref={categoryScrollRef}
-                  className="flex gap-2 overflow-x-auto scrollbar-hide scroll-smooth flex-1"
-                  style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-                >
-                  {CATEGORIES.map((category) => (
-                    <button
-                      key={category}
-                      onClick={() => setSelectedCategory(category)}
-                      className={`px-4 py-2 rounded-lg text-sm font-bold uppercase transition-all whitespace-nowrap ${
-                        selectedCategory === category
-                          ? 'bg-streetiz-red text-white'
-                          : 'bg-[#181818] text-gray-400 hover:bg-[#282828] hover:text-white'
-                      }`}
-                    >
-                      {category}
-                    </button>
-                  ))}
-                </div>
-                <button
-                  onClick={() => scroll(categoryScrollRef, 'right')}
-                  className="w-8 h-8 bg-[#181818] hover:bg-[#282828] rounded-full flex items-center justify-center transition-colors flex-shrink-0"
-                >
-                  <ChevronRight className="w-4 h-4 text-white" />
-                </button>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => scroll(cityScrollRef, 'left')}
-                  className="w-8 h-8 bg-[#181818] hover:bg-[#282828] rounded-full flex items-center justify-center transition-colors flex-shrink-0"
-                >
-                  <ChevronLeft className="w-4 h-4 text-white" />
-                </button>
-                <div
-                  ref={cityScrollRef}
-                  className="flex gap-2 overflow-x-auto scrollbar-hide scroll-smooth flex-1"
-                  style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-                >
-                  {CITIES.map((city) => (
-                    <button
-                      key={city.name}
-                      onClick={() => setSelectedCity(selectedCity === city.name ? '' : city.name)}
-                      className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
-                        selectedCity === city.name
-                          ? 'bg-streetiz-red text-white'
-                          : 'bg-[#181818] text-gray-400 hover:bg-[#282828] hover:text-white'
-                      }`}
-                    >
-                      <MapPin className="w-3.5 h-3.5" />
-                      <span>{city.name}</span>
-                    </button>
-                  ))}
-                </div>
-                <button
-                  onClick={() => scroll(cityScrollRef, 'right')}
-                  className="w-8 h-8 bg-[#181818] hover:bg-[#282828] rounded-full flex items-center justify-center transition-colors flex-shrink-0"
-                >
-                  <ChevronRight className="w-4 h-4 text-white" />
-                </button>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => scroll(dateScrollRef, 'left')}
-                  className="w-8 h-8 bg-[#181818] hover:bg-[#282828] rounded-full flex items-center justify-center transition-colors flex-shrink-0"
-                >
-                  <ChevronLeft className="w-4 h-4 text-white" />
-                </button>
-                <div
-                  ref={dateScrollRef}
-                  className="flex gap-2 overflow-x-auto scrollbar-hide scroll-smooth flex-1"
-                  style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-                >
-                  {DATE_FILTERS.map((filter) => (
-                    <button
-                      key={filter}
-                      onClick={() => setSelectedDateFilter(selectedDateFilter === filter ? '' : filter)}
-                      className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
-                        selectedDateFilter === filter
-                          ? 'bg-streetiz-red text-white'
-                          : 'bg-[#181818] text-gray-400 hover:bg-[#282828] hover:text-white'
-                      }`}
-                    >
-                      {filter}
-                    </button>
-                  ))}
-                </div>
-                <button
-                  onClick={() => scroll(dateScrollRef, 'right')}
-                  className="w-8 h-8 bg-[#181818] hover:bg-[#282828] rounded-full flex items-center justify-center transition-colors flex-shrink-0"
-                >
-                  <ChevronRight className="w-4 h-4 text-white" />
-                </button>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => scroll(styleScrollRef, 'left')}
-                  className="w-8 h-8 bg-[#181818] hover:bg-[#282828] rounded-full flex items-center justify-center transition-colors flex-shrink-0"
-                >
-                  <ChevronLeft className="w-4 h-4 text-white" />
-                </button>
-                <div
-                  ref={styleScrollRef}
-                  className="flex gap-2 overflow-x-auto scrollbar-hide scroll-smooth flex-1"
-                  style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-                >
-                  {MUSIC_STYLES.map((style) => (
-                    <button
-                      key={style}
-                      onClick={() => setSelectedStyle(selectedStyle === style ? '' : style)}
-                      className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
-                        selectedStyle === style
-                          ? 'bg-streetiz-red text-white'
-                          : 'bg-[#181818] text-gray-400 hover:bg-[#282828] hover:text-white'
-                      }`}
-                    >
-                      {style}
-                    </button>
-                  ))}
-                </div>
-                <button
-                  onClick={() => scroll(styleScrollRef, 'right')}
-                  className="w-8 h-8 bg-[#181818] hover:bg-[#282828] rounded-full flex items-center justify-center transition-colors flex-shrink-0"
-                >
-                  <ChevronRight className="w-4 h-4 text-white" />
-                </button>
-              </div>
-
-              {hasActiveFilters && (
-                <div className="flex items-center justify-between pt-2">
-                  <div className="text-sm text-gray-400">
-                    <span className="font-bold text-white">{filteredEvents.length}</span> events found
-                  </div>
+          <div className="sticky top-20 z-30 bg-[#0F0F0F]/95 backdrop-blur-md py-4 mb-8 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 border-b border-[#222]">
+            <div className="max-w-[1800px] mx-auto">
+              <div className="flex flex-wrap items-center gap-2">
+                {CATEGORIES.map((category) => (
                   <button
-                    onClick={resetFilters}
-                    className="text-sm font-bold text-streetiz-red hover:text-red-400 transition-colors"
+                    key={category}
+                    onClick={() => setSelectedCategory(category)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
+                      selectedCategory === category
+                        ? 'bg-streetiz-red text-white'
+                        : 'bg-[#181818] text-gray-400 hover:bg-[#282828] hover:text-white'
+                    }`}
                   >
-                    Reset all filters
+                    {category}
                   </button>
-                </div>
-              )}
+                ))}
+
+                <div className="w-px h-6 bg-[#333] mx-1"></div>
+
+                {CITIES.map((city) => (
+                  <button
+                    key={city.name}
+                    onClick={() => setSelectedCity(selectedCity === city.name ? '' : city.name)}
+                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                      selectedCity === city.name
+                        ? 'bg-streetiz-red text-white'
+                        : 'bg-[#181818] text-gray-400 hover:bg-[#282828] hover:text-white'
+                    }`}
+                  >
+                    <MapPin className="w-3 h-3" />
+                    <span>{city.name}</span>
+                  </button>
+                ))}
+
+                <div className="w-px h-6 bg-[#333] mx-1"></div>
+
+                {DATE_FILTERS.map((filter) => (
+                  <button
+                    key={filter}
+                    onClick={() => setSelectedDateFilter(selectedDateFilter === filter ? '' : filter)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                      selectedDateFilter === filter
+                        ? 'bg-streetiz-red text-white'
+                        : 'bg-[#181818] text-gray-400 hover:bg-[#282828] hover:text-white'
+                    }`}
+                  >
+                    {filter}
+                  </button>
+                ))}
+
+                {hasActiveFilters && (
+                  <>
+                    <div className="w-px h-6 bg-[#333] mx-1"></div>
+                    <button
+                      onClick={resetFilters}
+                      className="px-3 py-1.5 rounded-lg text-xs font-bold text-streetiz-red hover:bg-[#282828] transition-all"
+                    >
+                      Reset
+                    </button>
+                    <div className="text-xs text-gray-500 ml-2">
+                      <span className="font-bold text-white">{filteredEvents.length}</span> events
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </div>
-
-          {!selectedCity && (
-            <CityExplorer
-              cities={CITIES}
-              onCitySelect={(cityName) => setSelectedCity(cityName)}
-            />
-          )}
-
-          {trendingEvents.length > 0 && (
-            <div className="mb-12">
-              <div className="flex items-center gap-2 mb-6">
-                <TrendingUp className="w-6 h-6 text-streetiz-red" />
-                <h2 className="text-2xl font-black text-white">Trending This Week</h2>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                {trendingEvents.map((event) => {
-                  const { date, time } = formatDateTime(event.event_date);
-                  return (
-                    <div
-                      key={event.id}
-                      onClick={() => setSelectedEvent(event)}
-                      className="bg-[#111] rounded-xl overflow-hidden border border-[#222] hover:border-streetiz-red/50 transition-all cursor-pointer group"
-                    >
-                      <div className="relative aspect-square">
-                        <img
-                          src={event.featured_image || 'https://images.pexels.com/photos/1763075/pexels-photo-1763075.jpeg'}
-                          alt={event.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                      </div>
-                      <div className="p-3">
-                        <h3 className="text-white text-sm font-bold line-clamp-2 group-hover:text-streetiz-red transition-colors">
-                          {event.title}
-                        </h3>
-                        <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
-                          <MapPin className="w-3 h-3" />
-                          <span className="truncate">{event.location}</span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
 
           <div className="grid lg:grid-cols-[1fr_350px] gap-8">
             <div>
