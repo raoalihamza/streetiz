@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Plus, MessageSquare, ShoppingBag, Briefcase, FileText, MapPin, ChevronDown,
-  Search, Users as UsersIcon, Home, TrendingUp, MessageCircle, Flame, Sparkles
+  Search, Users as UsersIcon, Home, TrendingUp, MessageCircle, Flame, Sparkles, Filter
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -17,6 +17,15 @@ import OnlineMembers from '../components/OnlineMembers';
 import TrendingTags from '../components/TrendingTags';
 import ProfileStatsWidget from '../components/ProfileStatsWidget';
 import MessagesInbox from '../components/MessagesInbox';
+import ForumList from '../components/ForumList';
+import ForumTopicModal from '../components/ForumTopicModal';
+import CreateForumTopicModal from '../components/CreateForumTopicModal';
+import MarketplaceList from '../components/MarketplaceList';
+import MarketplaceItemModal from '../components/MarketplaceItemModal';
+import CreateMarketplaceItemModal from '../components/CreateMarketplaceItemModal';
+import CastingsList from '../components/CastingsList';
+import CastingDetailModal from '../components/CastingDetailModal';
+import CreateCastingModal from '../components/CreateCastingModal';
 
 interface CommunityPageProps {
   onNavigate: (page: string) => void;
@@ -80,6 +89,16 @@ export default function CommunityPage({ onNavigate }: CommunityPageProps) {
   const [showCreateMenu, setShowCreateMenu] = useState(false);
   const [createModalType, setCreateModalType] = useState<'post' | 'forum' | 'announcement' | 'marketplace' | 'workshop' | null>(null);
   const [openChats, setOpenChats] = useState<Array<{ id: string; name: string; avatar: string | null }>>([]);
+
+  const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
+  const [selectedMarketplaceItemId, setSelectedMarketplaceItemId] = useState<string | null>(null);
+  const [selectedCastingId, setSelectedCastingId] = useState<string | null>(null);
+  const [showCreateForumTopic, setShowCreateForumTopic] = useState(false);
+  const [showCreateMarketplaceItem, setShowCreateMarketplaceItem] = useState(false);
+  const [showCreateCasting, setShowCreateCasting] = useState(false);
+  const [forumSortBy, setForumSortBy] = useState('recent');
+  const [marketplaceCategory, setMarketplaceCategory] = useState('all');
+  const [castingType, setCastingType] = useState('all');
 
   const handleViewProfile = async (userId: string) => {
     try {
@@ -295,10 +314,23 @@ export default function CommunityPage({ onNavigate }: CommunityPageProps) {
   const createActions = [
     { id: 'post', label: 'Create Post', icon: FileText },
     { id: 'forum', label: 'Forum Topic', icon: MessageSquare },
-    { id: 'announcement', label: 'Announcement', icon: TrendingUp },
     { id: 'marketplace', label: 'Marketplace Item', icon: ShoppingBag },
-    { id: 'workshop', label: 'Workshop', icon: Briefcase },
+    { id: 'casting', label: 'Casting / Job', icon: Briefcase },
+    { id: 'announcement', label: 'Announcement', icon: TrendingUp },
   ];
+
+  const handleCreateAction = (actionId: string) => {
+    if (actionId === 'forum') {
+      setShowCreateForumTopic(true);
+    } else if (actionId === 'marketplace') {
+      setShowCreateMarketplaceItem(true);
+    } else if (actionId === 'casting') {
+      setShowCreateCasting(true);
+    } else {
+      setCreateModalType(actionId as any);
+    }
+    setShowCreateMenu(false);
+  };
 
   return (
     <div className="min-h-screen bg-[#0D0D0D] pt-20">
@@ -329,10 +361,7 @@ export default function CommunityPage({ onNavigate }: CommunityPageProps) {
                           return (
                             <button
                               key={action.id}
-                              onClick={() => {
-                                setCreateModalType(action.id as any);
-                                setShowCreateMenu(false);
-                              }}
+                              onClick={() => handleCreateAction(action.id)}
                               className="w-full flex items-center gap-3 px-4 py-3 text-white hover:bg-[#1a1a1a] transition-colors"
                             >
                               <Icon className="w-4 h-4 text-streetiz-red" />
@@ -514,7 +543,111 @@ export default function CommunityPage({ onNavigate }: CommunityPageProps) {
               </div>
             )}
 
-            {selectedCategory !== 'posts' && selectedCategory !== 'members' && (
+            {selectedCategory === 'forum' && (
+              <>
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-black text-white">Forum</h2>
+                  <div className="flex items-center gap-3">
+                    <select
+                      value={forumSortBy}
+                      onChange={(e) => setForumSortBy(e.target.value)}
+                      className="bg-[#111] border border-[#222] rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:border-streetiz-red"
+                    >
+                      <option value="recent">Les + récents</option>
+                      <option value="popular">Populaires</option>
+                      <option value="unresolved">Non résolus</option>
+                    </select>
+                    {user && (
+                      <button
+                        onClick={() => setShowCreateForumTopic(true)}
+                        className="bg-gradient-to-r from-streetiz-red to-red-600 text-white px-5 py-2 rounded-xl font-bold hover:shadow-lg hover:shadow-streetiz-red/30 transition-all flex items-center gap-2"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Créer un topic
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <ForumList
+                  onTopicClick={setSelectedTopicId}
+                  sortBy={forumSortBy}
+                />
+              </>
+            )}
+
+            {selectedCategory === 'marketplace' && (
+              <>
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-black text-white">Marketplace</h2>
+                  <div className="flex items-center gap-3">
+                    <select
+                      value={marketplaceCategory}
+                      onChange={(e) => setMarketplaceCategory(e.target.value)}
+                      className="bg-[#111] border border-[#222] rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:border-streetiz-red"
+                    >
+                      <option value="all">Toutes catégories</option>
+                      <option value="dj_gear">DJ</option>
+                      <option value="video">Vidéo</option>
+                      <option value="audio">Enceintes</option>
+                      <option value="accessories">Accessoires</option>
+                      <option value="lighting">Lumières</option>
+                      <option value="other">Divers</option>
+                    </select>
+                    {user && (
+                      <button
+                        onClick={() => setShowCreateMarketplaceItem(true)}
+                        className="bg-gradient-to-r from-streetiz-red to-red-600 text-white px-5 py-2 rounded-xl font-bold hover:shadow-lg hover:shadow-streetiz-red/30 transition-all flex items-center gap-2"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Créer une annonce
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <MarketplaceList
+                  onItemClick={setSelectedMarketplaceItemId}
+                  category={marketplaceCategory}
+                />
+              </>
+            )}
+
+            {selectedCategory === 'casting' && (
+              <>
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-black text-white">Castings & Jobs</h2>
+                  <div className="flex items-center gap-3">
+                    <select
+                      value={castingType}
+                      onChange={(e) => setCastingType(e.target.value)}
+                      className="bg-[#111] border border-[#222] rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:border-streetiz-red"
+                    >
+                      <option value="all">Tous types</option>
+                      <option value="DJ">DJ</option>
+                      <option value="Danseur">Danseur</option>
+                      <option value="Vidéo">Vidéo</option>
+                      <option value="Staff">Staff</option>
+                      <option value="Workshop">Workshop</option>
+                      <option value="Figuration">Figuration</option>
+                    </select>
+                    {user && (
+                      <button
+                        onClick={() => setShowCreateCasting(true)}
+                        className="bg-gradient-to-r from-streetiz-red to-red-600 text-white px-5 py-2 rounded-xl font-bold hover:shadow-lg hover:shadow-streetiz-red/30 transition-all flex items-center gap-2"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Poster une annonce
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <CastingsList
+                  onCastingClick={setSelectedCastingId}
+                  type={castingType}
+                />
+              </>
+            )}
+
+            {selectedCategory === 'announcements' && (
               <div className="bg-[#111] rounded-2xl border border-[#222] p-12 text-center">
                 <FileText className="w-16 h-16 text-[#333] mx-auto mb-4" />
                 <h3 className="text-white font-black text-2xl mb-3">Bientôt disponible</h3>
@@ -620,6 +753,57 @@ export default function CommunityPage({ onNavigate }: CommunityPageProps) {
           />
         </div>
       ))}
+
+      {selectedTopicId && (
+        <ForumTopicModal
+          topicId={selectedTopicId}
+          onClose={() => setSelectedTopicId(null)}
+        />
+      )}
+
+      {showCreateForumTopic && (
+        <CreateForumTopicModal
+          onClose={() => setShowCreateForumTopic(false)}
+          onSuccess={() => {
+            setShowCreateForumTopic(false);
+            window.location.reload();
+          }}
+        />
+      )}
+
+      {selectedMarketplaceItemId && (
+        <MarketplaceItemModal
+          itemId={selectedMarketplaceItemId}
+          onClose={() => setSelectedMarketplaceItemId(null)}
+        />
+      )}
+
+      {showCreateMarketplaceItem && (
+        <CreateMarketplaceItemModal
+          onClose={() => setShowCreateMarketplaceItem(false)}
+          onSuccess={() => {
+            setShowCreateMarketplaceItem(false);
+            window.location.reload();
+          }}
+        />
+      )}
+
+      {selectedCastingId && (
+        <CastingDetailModal
+          castingId={selectedCastingId}
+          onClose={() => setSelectedCastingId(null)}
+        />
+      )}
+
+      {showCreateCasting && (
+        <CreateCastingModal
+          onClose={() => setShowCreateCasting(false)}
+          onSuccess={() => {
+            setShowCreateCasting(false);
+            window.location.reload();
+          }}
+        />
+      )}
 
       <SeedDataButton />
     </div>
