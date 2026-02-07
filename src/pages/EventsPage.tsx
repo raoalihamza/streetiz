@@ -139,14 +139,27 @@ export default function EventsPage({ onNavigate }: EventsPageProps) {
     <>
       <div className="min-h-screen bg-[#0F0F0F] pt-24 pb-12">
         <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="sticky top-20 z-30 bg-[#0F0F0F]/95 backdrop-blur-md py-4 mb-8 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 border-b border-[#222]">
+          <div className="sticky top-20 z-30 bg-[#0F0F0F]/95 backdrop-blur-md py-3 mb-8 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 border-b border-[#222]">
             <div className="max-w-[1800px] mx-auto">
-              <div className="flex flex-wrap items-center gap-2">
-                {CATEGORIES.map((category) => (
+              <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1">
+                <button
+                  onClick={resetFilters}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex-shrink-0 ${
+                    !hasActiveFilters
+                      ? 'bg-streetiz-red text-white'
+                      : 'bg-[#181818] text-gray-400 hover:bg-[#282828] hover:text-white'
+                  }`}
+                >
+                  ALL EVENTS
+                </button>
+
+                <div className="w-px h-5 bg-[#333] flex-shrink-0"></div>
+
+                {CATEGORIES.filter(cat => cat !== 'ALL').map((category) => (
                   <button
                     key={category}
                     onClick={() => setSelectedCategory(category)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-all whitespace-nowrap flex-shrink-0 ${
                       selectedCategory === category
                         ? 'bg-streetiz-red text-white'
                         : 'bg-[#181818] text-gray-400 hover:bg-[#282828] hover:text-white'
@@ -156,13 +169,13 @@ export default function EventsPage({ onNavigate }: EventsPageProps) {
                   </button>
                 ))}
 
-                <div className="w-px h-6 bg-[#333] mx-1"></div>
+                <div className="w-px h-5 bg-[#333] flex-shrink-0"></div>
 
                 {CITIES.map((city) => (
                   <button
                     key={city.name}
                     onClick={() => setSelectedCity(selectedCity === city.name ? '' : city.name)}
-                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex-shrink-0 ${
                       selectedCity === city.name
                         ? 'bg-streetiz-red text-white'
                         : 'bg-[#181818] text-gray-400 hover:bg-[#282828] hover:text-white'
@@ -173,13 +186,13 @@ export default function EventsPage({ onNavigate }: EventsPageProps) {
                   </button>
                 ))}
 
-                <div className="w-px h-6 bg-[#333] mx-1"></div>
+                <div className="w-px h-5 bg-[#333] flex-shrink-0"></div>
 
                 {DATE_FILTERS.map((filter) => (
                   <button
                     key={filter}
                     onClick={() => setSelectedDateFilter(selectedDateFilter === filter ? '' : filter)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex-shrink-0 ${
                       selectedDateFilter === filter
                         ? 'bg-streetiz-red text-white'
                         : 'bg-[#181818] text-gray-400 hover:bg-[#282828] hover:text-white'
@@ -190,18 +203,9 @@ export default function EventsPage({ onNavigate }: EventsPageProps) {
                 ))}
 
                 {hasActiveFilters && (
-                  <>
-                    <div className="w-px h-6 bg-[#333] mx-1"></div>
-                    <button
-                      onClick={resetFilters}
-                      className="px-3 py-1.5 rounded-lg text-xs font-bold text-streetiz-red hover:bg-[#282828] transition-all"
-                    >
-                      Reset
-                    </button>
-                    <div className="text-xs text-gray-500 ml-2">
-                      <span className="font-bold text-white">{filteredEvents.length}</span> events
-                    </div>
-                  </>
+                  <div className="text-xs text-gray-500 ml-2 flex-shrink-0">
+                    <span className="font-bold text-white">{filteredEvents.length}</span> events
+                  </div>
                 )}
               </div>
             </div>
@@ -209,8 +213,7 @@ export default function EventsPage({ onNavigate }: EventsPageProps) {
 
           <div className="grid lg:grid-cols-[1fr_350px] gap-8">
             <div>
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-black text-white">All Events</h2>
+              <div className="flex items-center justify-end mb-6">
                 <button
                   onClick={() => onNavigate('map')}
                   className="flex items-center gap-2 px-4 py-2 bg-[#181818] hover:bg-[#282828] rounded-lg transition-colors text-white text-sm font-bold"
