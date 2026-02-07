@@ -57,6 +57,7 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
+      <Navigation onNavigate={handleNavigate} />
       <Routes>
         <Route path="/" element={<HomePage onNavigate={handleNavigate} />} />
         <Route path="/login" element={<LoginPage onNavigate={handleNavigate} />} />
