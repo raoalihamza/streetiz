@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Calendar, MapPin, Plus, TrendingUp, Award, Star, Map, SlidersHorizontal, Check, Navigation } from 'lucide-react';
+import { Calendar, MapPin, Plus, TrendingUp, Award, Star, Map, SlidersHorizontal, Check } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import EventModal from '../components/EventModal';
@@ -41,26 +41,17 @@ const CITIES = [
 ];
 
 const CATEGORIES = ['ALL', 'Party', 'Festival', 'Battle', 'Workshop', 'Concert', 'Fashion Event'];
-const COUNTRIES = [
-  { name: 'France', flag: '🇫🇷' },
-  { name: 'Belgium', flag: '🇧🇪' },
-  { name: 'Spain', flag: '🇪🇸' },
-  { name: 'Germany', flag: '🇩🇪' },
-  { name: 'Portugal', flag: '🇵🇹' },
-  { name: 'Netherlands', flag: '🇳🇱' },
-];
+const DATE_FILTERS = ['Tonight', 'This Week', 'This Month'];
 
 export default function EventsPage({ onNavigate }: EventsPageProps) {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
-  const [selectedCountry, setSelectedCountry] = useState<string>('');
   const [selectedCity, setSelectedCity] = useState<string>('');
+  const [selectedDateFilter, setSelectedDateFilter] = useState<string>('');
   const [selectedStyle, setSelectedStyle] = useState<string>('');
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [isFiltersDrawerOpen, setIsFiltersDrawerOpen] = useState(false);
-  const [showCountryDropdown, setShowCountryDropdown] = useState(false);
-  const [nearMeActive, setNearMeActive] = useState(false);
   const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilters>({
     priceMin: 0,
     priceMax: 500,
@@ -84,7 +75,7 @@ export default function EventsPage({ onNavigate }: EventsPageProps) {
 
   useEffect(() => {
     loadEvents();
-  }, [selectedCategory, selectedCity, selectedCountry]);
+  }, [selectedCategory, selectedCity]);
 
   const loadEvents = async () => {
     try {
@@ -109,10 +100,6 @@ export default function EventsPage({ onNavigate }: EventsPageProps) {
         query = query.ilike('location', `%${selectedCity}%`);
       }
 
-      if (selectedCountry) {
-        query = query.ilike('location', `%${selectedCountry}%`);
-      }
-
       const { data, error } = await query;
 
       if (error) throw error;
@@ -125,6 +112,27 @@ export default function EventsPage({ onNavigate }: EventsPageProps) {
   };
 
   const filteredEvents = events.filter((event) => {
+    let matchesDateFilter = true;
+    if (selectedDateFilter) {
+      const eventDate = new Date(event.event_date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      if (selectedDateFilter === 'Tonight') {
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        matchesDateFilter = eventDate >= today && eventDate < tomorrow;
+      } else if (selectedDateFilter === 'This Week') {
+        const weekEnd = new Date(today);
+        weekEnd.setDate(weekEnd.getDate() + 7);
+        matchesDateFilter = eventDate >= today && eventDate < weekEnd;
+      } else if (selectedDateFilter === 'This Month') {
+        const monthEnd = new Date(today);
+        monthEnd.setMonth(monthEnd.getMonth() + 1);
+        matchesDateFilter = eventDate >= today && eventDate < monthEnd;
+      }
+    }
+
     if (advancedFilters.freeEntry && !event.is_free) {
       return false;
     }
@@ -171,7 +179,7 @@ export default function EventsPage({ onNavigate }: EventsPageProps) {
       }
     }
 
-    return true;
+    return matchesDateFilter;
   });
 
   const formatDateTime = (dateString: string) => {
@@ -184,13 +192,12 @@ export default function EventsPage({ onNavigate }: EventsPageProps) {
 
   const resetFilters = () => {
     setSelectedCategory('ALL');
-    setSelectedCountry('');
     setSelectedCity('');
+    setSelectedDateFilter('');
     setSelectedStyle('');
-    setNearMeActive(false);
   };
 
-  const hasActiveFilters = selectedCategory !== 'ALL' || selectedCountry || selectedCity || selectedStyle || nearMeActive;
+  const hasActiveFilters = selectedCategory !== 'ALL' || selectedCity || selectedDateFilter || selectedStyle;
 
   if (loading) {
     return (
@@ -250,74 +257,39 @@ export default function EventsPage({ onNavigate }: EventsPageProps) {
                 <div className="h-px bg-gradient-to-r from-transparent via-[#333] to-transparent my-4"></div>
 
                 <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
-                  <div className="relative flex-shrink-0">
+                  {CITIES.slice(0, 6).map((city) => (
                     <button
-                      onClick={() => setShowCountryDropdown(!showCountryDropdown)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
-                        selectedCountry
+                      key={city.name}
+                      onClick={() => setSelectedCity(selectedCity === city.name ? '' : city.name)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex-shrink-0 transform hover:scale-105 ${
+                        selectedCity === city.name
                           ? 'bg-streetiz-red text-white shadow-md shadow-red-500/20'
                           : 'bg-[#1a1a1a] text-gray-400 hover:bg-[#282828] hover:text-white'
                       }`}
                     >
-                      {selectedCountry ? (
-                        <>
-                          <span>{COUNTRIES.find(c => c.name === selectedCountry)?.flag}</span>
-                          <span>{selectedCountry}</span>
-                        </>
-                      ) : (
-                        <>
-                          <MapPin className="w-3 h-3" />
-                          <span>Country</span>
-                        </>
-                      )}
+                      {selectedCity === city.name && <Check className="w-3 h-3" />}
+                      <MapPin className="w-3 h-3" />
+                      <span>{city.name}</span>
                     </button>
-                    {showCountryDropdown && (
-                      <div className="absolute top-full mt-2 left-0 bg-[#1a1a1a] border border-[#333] rounded-lg shadow-xl z-50 min-w-[150px] animate-scale-in">
-                        {COUNTRIES.map((country) => (
-                          <button
-                            key={country.name}
-                            onClick={() => {
-                              setSelectedCountry(selectedCountry === country.name ? '' : country.name);
-                              setShowCountryDropdown(false);
-                            }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-gray-400 hover:bg-[#282828] hover:text-white transition-colors first:rounded-t-lg last:rounded-b-lg"
-                          >
-                            <span>{country.flag}</span>
-                            <span>{country.name}</span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  ))}
 
-                  <button
-                    onClick={() => setNearMeActive(!nearMeActive)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex-shrink-0 transform hover:scale-105 ${
-                      nearMeActive
-                        ? 'bg-streetiz-red text-white shadow-md shadow-red-500/20'
-                        : 'bg-[#1a1a1a] text-gray-400 hover:bg-[#282828] hover:text-white'
-                    }`}
-                  >
-                    {nearMeActive && <Check className="w-3 h-3" />}
-                    <Navigation className="w-3 h-3" />
-                    <span>Near Me</span>
-                  </button>
+                  <div className="w-px h-4 bg-[#333] flex-shrink-0 mx-1"></div>
 
-                  <div className="w-px h-4 bg-[#333] flex-shrink-0"></div>
-
-                  <button
-                    onClick={() => setSelectedCity(selectedCity === 'Brussels' ? '' : 'Brussels')}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex-shrink-0 transform hover:scale-105 ${
-                      selectedCity === 'Brussels'
-                        ? 'bg-streetiz-red text-white shadow-md shadow-red-500/20'
-                        : 'bg-[#1a1a1a] text-gray-400 hover:bg-[#282828] hover:text-white'
-                    }`}
-                  >
-                    {selectedCity === 'Brussels' && <Check className="w-3 h-3" />}
-                    <MapPin className="w-3 h-3" />
-                    <span>Brussels</span>
-                  </button>
-
+                  {DATE_FILTERS.map((filter) => (
+                    <button
+                      key={filter}
+                      onClick={() => setSelectedDateFilter(selectedDateFilter === filter ? '' : filter)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex-shrink-0 transform hover:scale-105 ${
+                        selectedDateFilter === filter
+                          ? 'bg-streetiz-red text-white shadow-md shadow-red-500/20'
+                          : 'bg-[#1a1a1a] text-gray-400 hover:bg-[#282828] hover:text-white'
+                      }`}
+                    >
+                      {selectedDateFilter === filter && <Check className="w-3 h-3" />}
+                      <Calendar className="w-3 h-3" />
+                      {filter}
+                    </button>
+                  ))}
                 </div>
               </div>
 
