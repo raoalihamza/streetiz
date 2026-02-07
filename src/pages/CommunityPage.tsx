@@ -384,6 +384,25 @@ export default function CommunityPage({ onNavigate }: CommunityPageProps) {
 
               <TrendingTags />
 
+              <div className="bg-[#111] rounded-2xl border border-[#222] overflow-hidden shadow-lg shadow-black/50">
+                <div className="p-4 border-b border-[#222]">
+                  <h3 className="text-white font-black text-sm uppercase tracking-wider">Messages</h3>
+                </div>
+                <div className="p-2">
+                  <button
+                    onClick={() => setSelectedFeedTab('messages')}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                      selectedFeedTab === 'messages'
+                        ? 'bg-gradient-to-r from-streetiz-red to-red-600 text-white shadow-lg shadow-streetiz-red/30'
+                        : 'text-[#888] hover:bg-[#1a1a1a] hover:text-white'
+                    }`}
+                  >
+                    <MessageCircle className="w-5 h-5" />
+                    <span className="text-sm font-semibold">Messagerie</span>
+                  </button>
+                </div>
+              </div>
+
               {selectedCategory === 'members' && <MemberSearch onViewProfile={handleViewProfile} />}
             </div>
           </aside>
@@ -436,17 +455,6 @@ export default function CommunityPage({ onNavigate }: CommunityPageProps) {
                   >
                     <Flame className="w-4 h-4" />
                     Tendances
-                  </button>
-                  <button
-                    onClick={() => setSelectedFeedTab('messages')}
-                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${
-                      selectedFeedTab === 'messages'
-                        ? 'bg-gradient-to-r from-streetiz-red to-red-600 text-white shadow-lg shadow-streetiz-red/30'
-                        : 'text-[#888] hover:text-white hover:bg-[#1a1a1a]'
-                    }`}
-                  >
-                    <MessageCircle className="w-4 h-4" />
-                    Messages
                   </button>
                 </div>
 
