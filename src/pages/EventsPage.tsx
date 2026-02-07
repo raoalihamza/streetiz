@@ -139,87 +139,88 @@ export default function EventsPage({ onNavigate }: EventsPageProps) {
     <>
       <div className="min-h-screen bg-[#0F0F0F] pt-24 pb-12">
         <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="sticky top-20 z-30 bg-[#0F0F0F]/95 backdrop-blur-md py-3 mb-8 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 border-b border-[#222]">
-            <div className="max-w-[1800px] mx-auto">
-              <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1">
-                <button
-                  onClick={resetFilters}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex-shrink-0 ${
-                    !hasActiveFilters
-                      ? 'bg-streetiz-red text-white'
-                      : 'bg-[#181818] text-gray-400 hover:bg-[#282828] hover:text-white'
-                  }`}
-                >
-                  ALL EVENTS
-                </button>
-
-                <div className="w-px h-5 bg-[#333] flex-shrink-0"></div>
-
-                {CATEGORIES.filter(cat => cat !== 'ALL').map((category) => (
-                  <button
-                    key={category}
-                    onClick={() => setSelectedCategory(category)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-all whitespace-nowrap flex-shrink-0 ${
-                      selectedCategory === category
-                        ? 'bg-streetiz-red text-white'
-                        : 'bg-[#181818] text-gray-400 hover:bg-[#282828] hover:text-white'
-                    }`}
-                  >
-                    {category}
-                  </button>
-                ))}
-
-                <div className="w-px h-5 bg-[#333] flex-shrink-0"></div>
-
-                {CITIES.map((city) => (
-                  <button
-                    key={city.name}
-                    onClick={() => setSelectedCity(selectedCity === city.name ? '' : city.name)}
-                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex-shrink-0 ${
-                      selectedCity === city.name
-                        ? 'bg-streetiz-red text-white'
-                        : 'bg-[#181818] text-gray-400 hover:bg-[#282828] hover:text-white'
-                    }`}
-                  >
-                    <MapPin className="w-3 h-3" />
-                    <span>{city.name}</span>
-                  </button>
-                ))}
-
-                <div className="w-px h-5 bg-[#333] flex-shrink-0"></div>
-
-                {DATE_FILTERS.map((filter) => (
-                  <button
-                    key={filter}
-                    onClick={() => setSelectedDateFilter(selectedDateFilter === filter ? '' : filter)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex-shrink-0 ${
-                      selectedDateFilter === filter
-                        ? 'bg-streetiz-red text-white'
-                        : 'bg-[#181818] text-gray-400 hover:bg-[#282828] hover:text-white'
-                    }`}
-                  >
-                    {filter}
-                  </button>
-                ))}
-
-                {hasActiveFilters && (
-                  <div className="text-xs text-gray-500 ml-2 flex-shrink-0">
-                    <span className="font-bold text-white">{filteredEvents.length}</span> events
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
           <div className="grid lg:grid-cols-[1fr_350px] gap-8">
             <div>
-              <div className="flex items-center justify-end mb-6">
+              <div className="bg-[#0F0F0F]/95 backdrop-blur-md py-3 mb-4 border-b border-[#222]">
+                <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1">
+                  <button
+                    onClick={resetFilters}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex-shrink-0 ${
+                      !hasActiveFilters
+                        ? 'bg-streetiz-red text-white'
+                        : 'bg-[#181818] text-gray-400 hover:bg-[#282828] hover:text-white'
+                    }`}
+                  >
+                    ALL EVENTS
+                  </button>
+
+                  <div className="w-px h-5 bg-[#333] flex-shrink-0"></div>
+
+                  {CATEGORIES.filter(cat => cat !== 'ALL').map((category) => (
+                    <button
+                      key={category}
+                      onClick={() => setSelectedCategory(category)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-all whitespace-nowrap flex-shrink-0 ${
+                        selectedCategory === category
+                          ? 'bg-streetiz-red text-white'
+                          : 'bg-[#181818] text-gray-400 hover:bg-[#282828] hover:text-white'
+                      }`}
+                    >
+                      {category}
+                    </button>
+                  ))}
+
+                  <div className="w-px h-5 bg-[#333] flex-shrink-0"></div>
+
+                  {CITIES.map((city) => (
+                    <button
+                      key={city.name}
+                      onClick={() => setSelectedCity(selectedCity === city.name ? '' : city.name)}
+                      className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex-shrink-0 ${
+                        selectedCity === city.name
+                          ? 'bg-streetiz-red text-white'
+                          : 'bg-[#181818] text-gray-400 hover:bg-[#282828] hover:text-white'
+                      }`}
+                    >
+                      <MapPin className="w-3 h-3" />
+                      <span>{city.name}</span>
+                    </button>
+                  ))}
+
+                  <div className="w-px h-5 bg-[#333] flex-shrink-0"></div>
+
+                  {DATE_FILTERS.map((filter) => (
+                    <button
+                      key={filter}
+                      onClick={() => setSelectedDateFilter(selectedDateFilter === filter ? '' : filter)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex-shrink-0 ${
+                        selectedDateFilter === filter
+                          ? 'bg-streetiz-red text-white'
+                          : 'bg-[#181818] text-gray-400 hover:bg-[#282828] hover:text-white'
+                      }`}
+                    >
+                      {filter}
+                    </button>
+                  ))}
+
+                  {hasActiveFilters && (
+                    <div className="text-xs text-gray-500 ml-2 flex-shrink-0">
+                      <span className="font-bold text-white">{filteredEvents.length}</span> events
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between mb-4">
+                <div className="text-sm text-gray-400">
+                  {filteredEvents.length === 0 ? 'No events' : `${filteredEvents.length} events`}
+                </div>
                 <button
                   onClick={() => onNavigate('map')}
                   className="flex items-center gap-2 px-4 py-2 bg-[#181818] hover:bg-[#282828] rounded-lg transition-colors text-white text-sm font-bold"
                 >
                   <Map className="w-4 h-4" />
-                  <span>Explore on Map</span>
+                  <span>Map View</span>
                 </button>
               </div>
 
