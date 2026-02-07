@@ -41,7 +41,6 @@ const CITIES = [
 ];
 
 const CATEGORIES = ['ALL', 'Party', 'Festival', 'Battle', 'Workshop', 'Concert', 'Fashion Event'];
-const DATE_FILTERS = ['Tonight', 'This Week', 'This Month'];
 const COUNTRIES = [
   { name: 'France', flag: '🇫🇷' },
   { name: 'Belgium', flag: '🇧🇪' },
@@ -57,7 +56,6 @@ export default function EventsPage({ onNavigate }: EventsPageProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [selectedCountry, setSelectedCountry] = useState<string>('');
   const [selectedCity, setSelectedCity] = useState<string>('');
-  const [selectedDateFilter, setSelectedDateFilter] = useState<string>('');
   const [selectedStyle, setSelectedStyle] = useState<string>('');
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [isFiltersDrawerOpen, setIsFiltersDrawerOpen] = useState(false);
@@ -127,27 +125,6 @@ export default function EventsPage({ onNavigate }: EventsPageProps) {
   };
 
   const filteredEvents = events.filter((event) => {
-    let matchesDateFilter = true;
-    if (selectedDateFilter) {
-      const eventDate = new Date(event.event_date);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      if (selectedDateFilter === 'Tonight') {
-        const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        matchesDateFilter = eventDate >= today && eventDate < tomorrow;
-      } else if (selectedDateFilter === 'This Week') {
-        const weekEnd = new Date(today);
-        weekEnd.setDate(weekEnd.getDate() + 7);
-        matchesDateFilter = eventDate >= today && eventDate < weekEnd;
-      } else if (selectedDateFilter === 'This Month') {
-        const monthEnd = new Date(today);
-        monthEnd.setMonth(monthEnd.getMonth() + 1);
-        matchesDateFilter = eventDate >= today && eventDate < monthEnd;
-      }
-    }
-
     if (advancedFilters.freeEntry && !event.is_free) {
       return false;
     }
@@ -194,7 +171,7 @@ export default function EventsPage({ onNavigate }: EventsPageProps) {
       }
     }
 
-    return matchesDateFilter;
+    return true;
   });
 
   const formatDateTime = (dateString: string) => {
@@ -209,12 +186,11 @@ export default function EventsPage({ onNavigate }: EventsPageProps) {
     setSelectedCategory('ALL');
     setSelectedCountry('');
     setSelectedCity('');
-    setSelectedDateFilter('');
     setSelectedStyle('');
     setNearMeActive(false);
   };
 
-  const hasActiveFilters = selectedCategory !== 'ALL' || selectedCountry || selectedCity || selectedDateFilter || selectedStyle || nearMeActive;
+  const hasActiveFilters = selectedCategory !== 'ALL' || selectedCountry || selectedCity || selectedStyle || nearMeActive;
 
   if (loading) {
     return (
@@ -329,39 +305,19 @@ export default function EventsPage({ onNavigate }: EventsPageProps) {
 
                   <div className="w-px h-4 bg-[#333] flex-shrink-0"></div>
 
-                  {CITIES.slice(0, 6).map((city) => (
-                    <button
-                      key={city.name}
-                      onClick={() => setSelectedCity(selectedCity === city.name ? '' : city.name)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex-shrink-0 transform hover:scale-105 ${
-                        selectedCity === city.name
-                          ? 'bg-streetiz-red text-white shadow-md shadow-red-500/20'
-                          : 'bg-[#1a1a1a] text-gray-400 hover:bg-[#282828] hover:text-white'
-                      }`}
-                    >
-                      {selectedCity === city.name && <Check className="w-3 h-3" />}
-                      <MapPin className="w-3 h-3" />
-                      <span>{city.name}</span>
-                    </button>
-                  ))}
+                  <button
+                    onClick={() => setSelectedCity(selectedCity === 'Brussels' ? '' : 'Brussels')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex-shrink-0 transform hover:scale-105 ${
+                      selectedCity === 'Brussels'
+                        ? 'bg-streetiz-red text-white shadow-md shadow-red-500/20'
+                        : 'bg-[#1a1a1a] text-gray-400 hover:bg-[#282828] hover:text-white'
+                    }`}
+                  >
+                    {selectedCity === 'Brussels' && <Check className="w-3 h-3" />}
+                    <MapPin className="w-3 h-3" />
+                    <span>Brussels</span>
+                  </button>
 
-                  <div className="w-px h-4 bg-[#333] flex-shrink-0 mx-1"></div>
-
-                  {DATE_FILTERS.map((filter) => (
-                    <button
-                      key={filter}
-                      onClick={() => setSelectedDateFilter(selectedDateFilter === filter ? '' : filter)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex-shrink-0 transform hover:scale-105 ${
-                        selectedDateFilter === filter
-                          ? 'bg-streetiz-red text-white shadow-md shadow-red-500/20'
-                          : 'bg-[#1a1a1a] text-gray-400 hover:bg-[#282828] hover:text-white'
-                      }`}
-                    >
-                      {selectedDateFilter === filter && <Check className="w-3 h-3" />}
-                      <Calendar className="w-3 h-3" />
-                      {filter}
-                    </button>
-                  ))}
                 </div>
               </div>
 
