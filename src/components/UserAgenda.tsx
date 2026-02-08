@@ -206,6 +206,7 @@ export default function UserAgenda({ userId, isOwnProfile }: UserAgendaProps) {
       workshop: 'Workshop',
       concert: 'Concert',
       festival: 'Festival',
+      fashion: 'Fashion',
       custom: 'Perso',
       other: 'Autre'
     };
@@ -214,15 +215,67 @@ export default function UserAgenda({ userId, isOwnProfile }: UserAgendaProps) {
 
   const getEventTypeColor = (type: string) => {
     const colors: { [key: string]: string } = {
-      party: 'bg-purple-500',
-      battle: 'bg-red-500',
-      workshop: 'bg-blue-500',
+      party: 'bg-blue-500',
+      battle: 'bg-orange-500',
+      workshop: 'bg-purple-500',
       concert: 'bg-pink-500',
-      festival: 'bg-orange-500',
+      festival: 'bg-pink-500',
+      fashion: 'bg-yellow-500',
       custom: 'bg-gray-500',
       other: 'bg-gray-500'
     };
     return colors[type] || colors.other;
+  };
+
+  const getEventTypeTint = (type: string) => {
+    const tints: { [key: string]: string } = {
+      party: 'bg-blue-500/15',
+      battle: 'bg-orange-500/15',
+      workshop: 'bg-purple-500/15',
+      concert: 'bg-pink-500/15',
+      festival: 'bg-pink-500/15',
+      fashion: 'bg-yellow-500/15',
+      custom: 'bg-gray-500/10',
+      other: 'bg-gray-500/10'
+    };
+    return tints[type] || tints.other;
+  };
+
+  const getEventTypeIcon = (type: string) => {
+    const icons: { [key: string]: string } = {
+      party: '🎧',
+      battle: '⚔️',
+      workshop: '💃',
+      concert: '🎤',
+      festival: '🎪',
+      fashion: '👗',
+      custom: '📝',
+      other: '📅'
+    };
+    return icons[type] || icons.other;
+  };
+
+  const getEventTypePriority = (type: string) => {
+    const priorities: { [key: string]: number } = {
+      festival: 6,
+      fashion: 5,
+      party: 4,
+      concert: 4,
+      battle: 3,
+      workshop: 2,
+      custom: 1,
+      other: 0
+    };
+    return priorities[type] || 0;
+  };
+
+  const getDominantEvent = (events: AgendaEvent[]) => {
+    if (events.length === 0) return null;
+    return events.reduce((dominant, current) => {
+      const dominantPriority = getEventTypePriority(dominant.event_type);
+      const currentPriority = getEventTypePriority(current.event_type);
+      return currentPriority > dominantPriority ? current : dominant;
+    });
   };
 
   const formatMonthYear = () => {
@@ -298,65 +351,125 @@ export default function UserAgenda({ userId, isOwnProfile }: UserAgendaProps) {
 
             const dayEvents = getEventsForDate(date);
             const hasEvents = dayEvents.length > 0;
-            const hasPlusOne = dayEvents.some(e => e.looking_for_plus_one || e.available_spots > 0);
+            const dominantEvent = getDominantEvent(dayEvents);
+            const cellTint = dominantEvent ? getEventTypeTint(dominantEvent.event_type) : '';
 
             return (
-              <button
-                key={date.toISOString()}
-                onClick={() => handleDateClick(date)}
-                disabled={!isOwnProfile}
-                className={`aspect-square rounded-xl border transition-all relative group ${
-                  isToday(date)
-                    ? 'border-streetiz-red bg-streetiz-red/10'
-                    : hasEvents
-                    ? 'border-[#333] bg-[#0a0a0a]'
-                    : 'border-[#222] bg-transparent hover:border-[#333] hover:bg-[#0a0a0a]'
-                } ${!isOwnProfile ? 'cursor-default' : 'cursor-pointer'}`}
-              >
-                <div className="p-2 h-full flex flex-col">
-                  <span className={`text-xs font-semibold mb-1 ${
-                    isToday(date) ? 'text-streetiz-red' : 'text-white'
-                  }`}>
-                    {date.getDate()}
-                  </span>
+              <div key={date.toISOString()} className="relative group">
+                <button
+                  onClick={() => handleDateClick(date)}
+                  disabled={!isOwnProfile}
+                  className={`w-full aspect-square rounded-xl border transition-all relative overflow-hidden ${
+                    isToday(date)
+                      ? 'border-streetiz-red'
+                      : hasEvents
+                      ? 'border-[#333]'
+                      : 'border-[#222] hover:border-[#333]'
+                  } ${!isOwnProfile ? 'cursor-default' : 'cursor-pointer'}`}
+                >
+                  <div className={`absolute inset-0 ${cellTint} ${
+                    isToday(date) && !hasEvents ? 'bg-streetiz-red/10' : ''
+                  }`} />
 
-                  {hasEvents && (
-                    <div className="flex-1 flex flex-col gap-0.5 overflow-hidden">
-                      {dayEvents.slice(0, 2).map((event) => (
-                        <div
-                          key={event.id}
-                          className={`${getEventTypeColor(event.event_type)} h-1 rounded-full w-full`}
-                          title={event.title}
-                        />
-                      ))}
-                      {dayEvents.length > 2 && (
-                        <span className="text-[10px] text-[#888] font-semibold">
-                          +{dayEvents.length - 2}
-                        </span>
-                      )}
+                  <div className="relative p-1.5 h-full flex flex-col">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className={`text-[11px] font-bold ${
+                        isToday(date) ? 'text-streetiz-red' : 'text-white'
+                      }`}>
+                        {date.getDate()}
+                      </span>
                     </div>
-                  )}
 
-                  {hasPlusOne && (
-                    <div className="absolute top-1 right-1 flex gap-0.5">
-                      {dayEvents.some(e => e.looking_for_plus_one) && (
-                        <div className="bg-streetiz-red text-white text-[9px] font-bold px-1 py-0.5 rounded">
-                          +1
-                        </div>
-                      )}
-                      {dayEvents.filter(e => e.available_spots > 0).map((event, i) => (
-                        <div key={i} className="bg-green-500 text-white text-[9px] font-bold px-1 py-0.5 rounded">
-                          {event.available_spots}P
+                    {hasEvents && (
+                      <div className="flex-1 flex flex-col gap-1 overflow-hidden">
+                        {dayEvents.slice(0, 2).map((event) => (
+                          <div
+                            key={event.id}
+                            className="bg-black/30 backdrop-blur-sm rounded px-1.5 py-0.5 flex items-center gap-1 min-h-[20px]"
+                          >
+                            <span className="text-xs">{getEventTypeIcon(event.event_type)}</span>
+                            <span className="text-[10px] text-white font-semibold truncate flex-1">
+                              {event.title.length > 8 ? event.title.substring(0, 8) + '...' : event.title}
+                            </span>
+                            {(event.looking_for_plus_one || event.available_spots > 0) && (
+                              <div className="flex gap-0.5">
+                                {event.looking_for_plus_one && (
+                                  <div className="bg-streetiz-red text-white text-[8px] font-bold px-1 rounded">
+                                    +1
+                                  </div>
+                                )}
+                                {event.available_spots > 0 && (
+                                  <div className="bg-green-500 text-white text-[8px] font-bold px-1 rounded">
+                                    {event.available_spots}P
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                        {dayEvents.length > 2 && (
+                          <div className="text-[9px] text-[#888] font-bold text-center">
+                            +{dayEvents.length - 2} more
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {isOwnProfile && !hasEvents && (
+                      <Plus className="w-3 h-3 text-[#666] opacity-0 group-hover:opacity-100 transition-opacity absolute bottom-1 right-1" />
+                    )}
+                  </div>
+                </button>
+
+                {hasEvents && (
+                  <div className="absolute left-0 top-full mt-2 bg-black/95 backdrop-blur-sm rounded-xl border border-[#333] p-3 w-64 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none shadow-2xl">
+                    <div className="space-y-2">
+                      {dayEvents.map((event) => (
+                        <div key={event.id} className="border-b border-[#222] last:border-0 pb-2 last:pb-0">
+                          <div className="flex items-start gap-2 mb-1">
+                            <span className="text-lg">{getEventTypeIcon(event.event_type)}</span>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-0.5">
+                                <span className="text-xs font-bold text-[#888]">
+                                  {getEventTypeLabel(event.event_type)}
+                                </span>
+                              </div>
+                              <h5 className="text-white font-bold text-sm">{event.title}</h5>
+                              {event.location && (
+                                <p className="text-[#888] text-xs flex items-center gap-1 mt-0.5">
+                                  <MapPin className="w-3 h-3" />
+                                  {event.location}
+                                </p>
+                              )}
+                              {event.description && (
+                                <p className="text-[#666] text-xs mt-1 line-clamp-2">
+                                  {event.description}
+                                </p>
+                              )}
+                              {(event.looking_for_plus_one || event.available_spots > 0) && (
+                                <div className="flex items-center gap-2 mt-2">
+                                  {event.looking_for_plus_one && (
+                                    <span className="text-xs font-semibold text-streetiz-red flex items-center gap-1 bg-streetiz-red/10 px-2 py-0.5 rounded-full">
+                                      <UserPlus className="w-3 h-3" />
+                                      Cherche un +1
+                                    </span>
+                                  )}
+                                  {event.available_spots > 0 && (
+                                    <span className="text-xs font-semibold text-green-400 flex items-center gap-1 bg-green-500/10 px-2 py-0.5 rounded-full">
+                                      <Users className="w-3 h-3" />
+                                      {event.available_spots} place{event.available_spots > 1 ? 's' : ''}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       ))}
                     </div>
-                  )}
-
-                  {isOwnProfile && !hasEvents && (
-                    <Plus className="w-3 h-3 text-[#666] opacity-0 group-hover:opacity-100 transition-opacity absolute bottom-1 right-1" />
-                  )}
-                </div>
-              </button>
+                  </div>
+                )}
+              </div>
             );
           })}
         </div>
@@ -373,10 +486,10 @@ export default function UserAgenda({ userId, isOwnProfile }: UserAgendaProps) {
                     isOwnProfile ? 'cursor-pointer hover:border-[#333]' : ''
                   } transition-colors`}
                 >
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl">{getEventTypeIcon(event.event_type)}</span>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <div className={`w-2 h-2 rounded-full ${getEventTypeColor(event.event_type)}`} />
                         <span className="text-xs font-bold text-[#888]">
                           {getEventTypeLabel(event.event_type)}
                         </span>
@@ -439,13 +552,14 @@ export default function UserAgenda({ userId, isOwnProfile }: UserAgendaProps) {
                   onChange={(e) => setNewEvent({ ...newEvent, event_type: e.target.value })}
                   className="w-full bg-[#111] border border-[#222] rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-streetiz-red"
                 >
-                  <option value="party">Soirée</option>
-                  <option value="battle">Battle</option>
-                  <option value="workshop">Workshop</option>
-                  <option value="concert">Concert</option>
-                  <option value="festival">Festival</option>
-                  <option value="custom">Personnalisé</option>
-                  <option value="other">Autre</option>
+                  <option value="party">🎧 Soirée / Club</option>
+                  <option value="battle">⚔️ Battle</option>
+                  <option value="workshop">💃 Workshop</option>
+                  <option value="concert">🎤 Concert</option>
+                  <option value="festival">🎪 Festival</option>
+                  <option value="fashion">👗 Fashion</option>
+                  <option value="custom">📝 Personnalisé</option>
+                  <option value="other">📅 Autre</option>
                 </select>
               </div>
 
