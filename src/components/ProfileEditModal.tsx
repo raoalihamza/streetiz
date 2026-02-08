@@ -584,17 +584,17 @@ export default function ProfileEditModal({ onClose, onSave }: ProfileEditModalPr
                     </button>
                   </div>
                 ))}
-                {(photos.length + videos.length) < 12 && (
+                {Array.from({ length: 12 - (photos.length + videos.length) }).map((_, index) => (
                   <button
+                    key={`empty-${index}`}
                     onClick={() => setShowAddMediaModal(true)}
-                    className="aspect-square rounded-xl bg-[#111] border-2 border-dashed border-[#333] hover:border-streetiz-red hover:bg-[#1a1a1a] transition-all flex flex-col items-center justify-center gap-2 group"
+                    className="aspect-square rounded-xl bg-[#0a0a0a] border-2 border-dashed border-[#222] hover:border-streetiz-red hover:bg-[#111] transition-all flex items-center justify-center group"
                   >
-                    <div className="w-12 h-12 rounded-full bg-streetiz-red/20 group-hover:bg-streetiz-red/30 flex items-center justify-center transition-colors">
-                      <Plus className="w-6 h-6 text-streetiz-red" />
+                    <div className="w-10 h-10 rounded-full bg-[#111] group-hover:bg-streetiz-red/20 border border-[#222] group-hover:border-streetiz-red/30 flex items-center justify-center transition-all">
+                      <Plus className="w-5 h-5 text-[#444] group-hover:text-streetiz-red transition-colors" />
                     </div>
-                    <span className="text-[#666] group-hover:text-white text-sm font-semibold transition-colors">Ajouter</span>
                   </button>
-                )}
+                ))}
               </div>
             </div>
 
