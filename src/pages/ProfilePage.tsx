@@ -25,7 +25,7 @@ interface Profile {
   username: string;
   display_name: string | null;
   avatar_url: string | null;
-  cover_banner_url: string | null;
+  banner_url: string | null;
   bio: string | null;
   city: string | null;
   country: string | null;
@@ -362,7 +362,7 @@ export default function ProfilePage({ profileId: propProfileId, onClose, onOpenC
           <div className={`bg-[#0a0a0a] ${isModalMode ? 'rounded-3xl' : 'rounded-2xl'} border border-[#222] overflow-hidden`}>
             <div
               className="h-64 bg-gradient-to-br from-streetiz-red/20 to-[#111] relative"
-              style={profile.cover_banner_url ? { backgroundImage: `url(${profile.cover_banner_url})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+              style={profile.banner_url ? { backgroundImage: `url(${profile.banner_url})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
             />
 
             <div className="px-8 pb-8">

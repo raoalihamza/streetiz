@@ -22,7 +22,7 @@ export default function ProfileHeader({
   onBooking,
   loading = false
 }: ProfileHeaderProps) {
-  const bannerUrl = profile.cover_banner_url || DEFAULT_BANNER;
+  const bannerUrl = profile.banner_url || DEFAULT_BANNER;
   const avatarUrl = profile.avatar_url || DEFAULT_AVATAR;
   const roles = Array.isArray(profile.roles) ? profile.roles : [];
   const styles = Array.isArray(profile.styles) ? profile.styles : [];
