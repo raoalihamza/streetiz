@@ -108,15 +108,6 @@ export default function ProfilePhotoGrid({ userId, isOwnProfile }: ProfilePhotoG
       <div className="bg-zinc-900 rounded-lg p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-white">Photos</h3>
-          {isOwnProfile && (
-            <button
-              onClick={handleAddPhoto}
-              className="flex items-center gap-2 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg text-sm transition-colors"
-            >
-              <Upload size={16} />
-              Add
-            </button>
-          )}
         </div>
 
         <div className="grid grid-cols-3 gap-2">
@@ -124,7 +115,13 @@ export default function ProfilePhotoGrid({ userId, isOwnProfile }: ProfilePhotoG
             <div
               key={photo.id}
               className="relative aspect-square group cursor-pointer"
-              onClick={() => photo.id.startsWith('placeholder-') ? null : setSelectedPhoto(photo.url)}
+              onClick={() => {
+                if (photo.id.startsWith('placeholder-')) {
+                  if (isOwnProfile) handleAddPhoto();
+                } else {
+                  setSelectedPhoto(photo.url);
+                }
+              }}
             >
               <img
                 src={photo.url}
@@ -146,7 +143,12 @@ export default function ProfilePhotoGrid({ userId, isOwnProfile }: ProfilePhotoG
                   )}
                 </div>
               )}
-              {photo.id.startsWith('placeholder-') && (
+              {photo.id.startsWith('placeholder-') && isOwnProfile && (
+                <div className="absolute inset-0 flex items-center justify-center bg-zinc-800/50 hover:bg-zinc-700/50 rounded-lg transition-colors">
+                  <Upload size={24} className="text-zinc-500 group-hover:text-zinc-300 transition-colors" />
+                </div>
+              )}
+              {photo.id.startsWith('placeholder-') && !isOwnProfile && (
                 <div className="absolute inset-0 flex items-center justify-center bg-zinc-800/50 rounded-lg">
                   <Image size={24} className="text-zinc-600" />
                 </div>
