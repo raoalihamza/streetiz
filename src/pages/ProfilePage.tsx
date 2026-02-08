@@ -393,25 +393,7 @@ export default function ProfilePage({ profileId: propProfileId, onClose, onOpenC
                 backgroundSize: 'cover',
                 backgroundPosition: 'center'
               } : {}}
-            >
-              <div className="absolute top-6 right-6 z-10">
-                <LibreTonightButton
-                  userId={profile.id}
-                  isOwnProfile={isOwnProfile}
-                  availableTonight={profile.available_tonight}
-                  tonightLocationType={profile.tonight_location_type}
-                  tonightLocationValue={profile.tonight_location_value}
-                  availableTonightUpdatedAt={profile.available_tonight_updated_at}
-                  onUpdate={() => {
-                    if (username) {
-                      loadProfileByUsername();
-                    } else if (profileId) {
-                      loadProfile();
-                    }
-                  }}
-                />
-              </div>
-            </div>
+            />
 
             <div className="px-8 pb-8">
               <div className="flex flex-col md:flex-row md:items-end md:justify-between -mt-16 mb-6 relative z-20">
@@ -426,13 +408,6 @@ export default function ProfilePage({ profileId: propProfileId, onClose, onOpenC
                       {profile.display_name || profile.username}
                     </h1>
                     <p className="text-[#888] mb-2">@{profile.username}</p>
-                    {!isOwnProfile && profile.available_tonight && (
-                      <LibreTonightBadge
-                        locationValue={profile.tonight_location_value}
-                        updatedAt={profile.available_tonight_updated_at}
-                        size="sm"
-                      />
-                    )}
                   </div>
                 </div>
 
@@ -622,6 +597,31 @@ export default function ProfilePage({ profileId: propProfileId, onClose, onOpenC
                     )}
                   </div>
                 )}
+
+                <div className="flex items-center gap-4 pt-4 border-t border-[#222]">
+                  <LibreTonightButton
+                    userId={profile.id}
+                    isOwnProfile={isOwnProfile}
+                    availableTonight={profile.available_tonight}
+                    tonightLocationType={profile.tonight_location_type}
+                    tonightLocationValue={profile.tonight_location_value}
+                    availableTonightUpdatedAt={profile.available_tonight_updated_at}
+                    onUpdate={() => {
+                      if (username) {
+                        loadProfileByUsername();
+                      } else if (profileId) {
+                        loadProfile();
+                      }
+                    }}
+                  />
+                  {!isOwnProfile && profile.available_tonight && (
+                    <LibreTonightBadge
+                      locationValue={profile.tonight_location_value}
+                      updatedAt={profile.available_tonight_updated_at}
+                      size="md"
+                    />
+                  )}
+                </div>
               </div>
 
               <div className="border-b border-[#222] mb-6">
@@ -670,67 +670,136 @@ export default function ProfilePage({ profileId: propProfileId, onClose, onOpenC
               </div>
 
               {activeTab === 'about' && (
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-white font-black text-xl mb-4">About</h3>
-                    <p className="text-[#888]">
-                      {profile.bio || 'No bio provided yet.'}
-                    </p>
-                  </div>
-
-                  {upcomingEvents.length > 0 && (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div className="lg:col-span-2 space-y-6">
                     <div>
-                      <h3 className="text-white font-black text-xl mb-4 flex items-center gap-2">
-                        <Calendar className="w-5 h-5 text-streetiz-red" />
-                        Prochains événements
-                      </h3>
-                      <div className="space-y-3">
-                        {upcomingEvents.map((event) => (
-                          <div
-                            key={event.id}
-                            className="bg-[#111] border border-[#222] rounded-xl p-4 hover:border-[#333] transition-colors"
-                          >
-                            <div className="flex items-start gap-3">
-                              <div className="text-2xl">
-                                {event.event_type === 'performance' ? '🎧' :
-                                 event.event_type === 'workshop' ? '💃' :
-                                 event.event_type === 'battle' ? '⚔️' :
-                                 event.event_type === 'event' ? '🎪' : '📅'}
-                              </div>
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <span className="text-xs font-bold text-[#888]">
-                                    {new Date(event.event_date).toLocaleDateString('fr-FR', {
-                                      day: 'numeric',
-                                      month: 'long',
-                                      year: 'numeric'
-                                    })}
-                                  </span>
-                                </div>
-                                <h5 className="text-white font-bold text-sm mb-1">{event.title}</h5>
-                                {event.location && (
-                                  <p className="text-[#888] text-xs flex items-center gap-1">
-                                    <MapPin className="w-3 h-3" />
-                                    {event.location}
-                                  </p>
-                                )}
-                              </div>
+                      <h3 className="text-white font-black text-xl mb-4">About</h3>
+                      <p className="text-[#888]">
+                        {profile.bio || 'No bio provided yet.'}
+                      </p>
+                    </div>
+
+                    {(photos.length > 0 || videos.length > 0) && (
+                      <div className="space-y-6">
+                        <h3 className="text-white font-black text-xl flex items-center gap-2">
+                          <ImageIcon className="w-5 h-5 text-streetiz-red" />
+                          Médias
+                        </h3>
+
+                        {photos.length > 0 && (
+                          <div>
+                            <h4 className="text-white font-bold mb-3">Photos ({photos.length}/6)</h4>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                              {photos.slice(0, 6).map((photo) => (
+                                <button
+                                  key={photo.id}
+                                  onClick={() => setLightboxImage(photo.media_url)}
+                                  className="aspect-square rounded-xl overflow-hidden hover:opacity-80 transition-opacity"
+                                >
+                                  <img
+                                    src={photo.media_url}
+                                    alt="Profile media"
+                                    className="w-full h-full object-cover"
+                                  />
+                                </button>
+                              ))}
                             </div>
                           </div>
-                        ))}
+                        )}
+
+                        {videos.length > 0 && (
+                          <div>
+                            <h4 className="text-white font-bold mb-3">Vidéos ({videos.length}/3)</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              {videos.slice(0, 3).map((video) => (
+                                <div
+                                  key={video.id}
+                                  className="aspect-video rounded-xl overflow-hidden bg-[#111] relative"
+                                >
+                                  {video.external_platform === 'youtube' && video.external_url ? (
+                                    <iframe
+                                      src={getVideoEmbedUrl(video.external_url, video.external_platform)}
+                                      className="w-full h-full"
+                                      allowFullScreen
+                                    />
+                                  ) : video.media_url ? (
+                                    <video
+                                      src={video.media_url}
+                                      controls
+                                      className="w-full h-full"
+                                    />
+                                  ) : null}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    <div>
+                      <h3 className="text-white font-black text-xl mb-4">Member Since</h3>
+                      <p className="text-[#888]">
+                        {new Date(profile.created_at).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="lg:col-span-1">
+                    <div className="sticky top-24 space-y-6">
+                      <div className="bg-[#111] border border-[#222] rounded-2xl p-6">
+                        <h3 className="text-white font-black text-xl mb-4 flex items-center gap-2">
+                          <Calendar className="w-5 h-5 text-streetiz-red" />
+                          Agenda
+                        </h3>
+
+                        {upcomingEvents.length > 0 ? (
+                          <div className="space-y-3">
+                            {upcomingEvents.map((event) => (
+                              <div
+                                key={event.id}
+                                className="bg-[#0a0a0a] border border-[#222] rounded-xl p-4 hover:border-streetiz-red/50 transition-colors"
+                              >
+                                <div className="flex items-start gap-3">
+                                  <div className="text-2xl">
+                                    {event.event_type === 'performance' ? '🎧' :
+                                     event.event_type === 'workshop' ? '💃' :
+                                     event.event_type === 'battle' ? '⚔️' :
+                                     event.event_type === 'event' ? '🎪' : '📅'}
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <span className="text-xs font-bold text-streetiz-red">
+                                        {new Date(event.event_date).toLocaleDateString('fr-FR', {
+                                          day: 'numeric',
+                                          month: 'long',
+                                          year: 'numeric'
+                                        })}
+                                      </span>
+                                    </div>
+                                    <h5 className="text-white font-bold text-sm mb-1">{event.title}</h5>
+                                    {event.location && (
+                                      <p className="text-[#888] text-xs flex items-center gap-1">
+                                        <MapPin className="w-3 h-3" />
+                                        {event.location}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-[#666] text-sm text-center py-8">
+                            Aucun événement à venir
+                          </p>
+                        )}
                       </div>
                     </div>
-                  )}
-
-                  <div>
-                    <h3 className="text-white font-black text-xl mb-4">Member Since</h3>
-                    <p className="text-[#888]">
-                      {new Date(profile.created_at).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      })}
-                    </p>
                   </div>
                 </div>
               )}
