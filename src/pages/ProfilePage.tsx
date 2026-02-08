@@ -670,8 +670,8 @@ export default function ProfilePage({ profileId: propProfileId, onClose, onOpenC
               </div>
 
               {activeTab === 'about' && (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  <div className="lg:col-span-2 space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="space-y-6">
                     <div>
                       <h3 className="text-white font-black text-xl mb-4">About</h3>
                       <p className="text-[#888]">
@@ -749,7 +749,7 @@ export default function ProfilePage({ profileId: propProfileId, onClose, onOpenC
                     </div>
                   </div>
 
-                  <div className="lg:col-span-1">
+                  <div>
                     <div className="sticky top-24 space-y-6">
                       <div className="bg-[#111] border border-[#222] rounded-2xl p-6">
                         <h3 className="text-white font-black text-xl mb-4 flex items-center gap-2">
