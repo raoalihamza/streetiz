@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react';
-import { X, MapPin, Users, Music, Video, Calendar, Instagram, Youtube, MessageCircle, UserPlus, UserCheck } from 'lucide-react';
+import { X, MapPin, Users, Music, Video, Calendar, Instagram, Youtube, MessageCircle, UserPlus, UserCheck, User as UserIcon, Image as ImageIcon } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
+import MediaAccessRequests from './MediaAccessRequests';
+import MediaAccessGrants from './MediaAccessGrants';
+import LockedGallery from './LockedGallery';
 
 interface Profile {
   id: string;
@@ -23,10 +27,31 @@ interface ProfileModalProps {
   onMessage: (profileId: string) => void;
 }
 
+interface MediaGrant {
+  id: string;
+  scope: string;
+  expires_at: string | null;
+  created_at: string;
+}
+
+interface MediaRequest {
+  id: string;
+  status: string;
+  duration: string;
+  created_at: string;
+}
+
 export default function ProfileModal({ profile, onClose, onMessage }: ProfileModalProps) {
+  const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState<'profile' | 'media'>('profile');
   const [isFollowing, setIsFollowing] = useState(false);
   const [followerCount, setFollowerCount] = useState(profile.followers_count || 0);
   const [loading, setLoading] = useState(false);
+  const [mediaAccess, setMediaAccess] = useState<MediaGrant | null>(null);
+  const [pendingRequest, setPendingRequest] = useState<MediaRequest | null>(null);
+  const [mediaAccessLoading, setMediaAccessLoading] = useState(true);
+
+  const isOwnProfile = user?.id === profile.id;
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -37,12 +62,15 @@ export default function ProfileModal({ profile, onClose, onMessage }: ProfileMod
     document.body.style.overflow = 'hidden';
 
     checkFollowStatus();
+    if (!isOwnProfile) {
+      checkMediaAccess();
+    }
 
     return () => {
       document.removeEventListener('keydown', handleEscape);
       document.body.style.overflow = 'unset';
     };
-  }, [onClose]);
+  }, [onClose, profile.id]);
 
   const checkFollowStatus = async () => {
     try {
@@ -60,6 +88,59 @@ export default function ProfileModal({ profile, onClose, onMessage }: ProfileMod
       setIsFollowing(!!data);
     } catch (error) {
       console.error('Error checking follow status:', error);
+    }
+  };
+
+  const checkMediaAccess = async () => {
+    if (!user) return;
+
+    setMediaAccessLoading(true);
+    try {
+      const { data: grant } = await supabase
+        .rpc('get_active_grant', { viewer_id: user.id, owner_id: profile.id })
+        .single();
+
+      if (grant) {
+        setMediaAccess(grant);
+      } else {
+        const { data: request } = await supabase
+          .from('media_access_requests')
+          .select('id, status, duration, created_at')
+          .eq('requester_user_id', user.id)
+          .eq('owner_user_id', profile.id)
+          .eq('status', 'pending')
+          .order('created_at', { ascending: false })
+          .maybeSingle();
+
+        setPendingRequest(request);
+      }
+    } catch (error) {
+      console.error('Error checking media access:', error);
+    } finally {
+      setMediaAccessLoading(false);
+    }
+  };
+
+  const handleRequestAccess = async (duration: '5m' | '1h' | 'always') => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase.rpc('create_media_request', {
+        p_owner_id: profile.id,
+        p_duration: duration,
+        p_message: null
+      });
+
+      if (error) throw error;
+
+      setPendingRequest({
+        id: data,
+        status: 'pending',
+        duration,
+        created_at: new Date().toISOString()
+      });
+    } catch (error: any) {
+      alert(error.message || 'Erreur lors de la demande');
     }
   };
 
@@ -245,6 +326,64 @@ export default function ProfileModal({ profile, onClose, onMessage }: ProfileMod
                 </button>
               </div>
             </div>
+
+            <div className="flex gap-2 border-b border-[#222] mb-6">
+              <button
+                onClick={() => setActiveTab('profile')}
+                className={`flex items-center gap-2 px-4 py-3 font-semibold transition-colors border-b-2 ${
+                  activeTab === 'profile'
+                    ? 'border-streetiz-red text-white'
+                    : 'border-transparent text-[#666] hover:text-white'
+                }`}
+              >
+                <UserIcon className="w-4 h-4" />
+                <span>Profil</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('media')}
+                className={`flex items-center gap-2 px-4 py-3 font-semibold transition-colors border-b-2 ${
+                  activeTab === 'media'
+                    ? 'border-streetiz-red text-white'
+                    : 'border-transparent text-[#666] hover:text-white'
+                }`}
+              >
+                <ImageIcon className="w-4 h-4" />
+                <span>Médias</span>
+              </button>
+            </div>
+
+            {activeTab === 'media' && (
+              <div className="space-y-6">
+                {isOwnProfile ? (
+                  <>
+                    <MediaAccessRequests />
+                    <MediaAccessGrants />
+                  </>
+                ) : mediaAccessLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="w-8 h-8 border-2 border-streetiz-red border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : mediaAccess ? (
+                  <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-6 text-center">
+                    <div className="text-green-400 font-semibold mb-2">Accès actif</div>
+                    <p className="text-[#888] text-sm">
+                      Vous avez accès à la galerie de {profile.username}
+                    </p>
+                    {mediaAccess.expires_at && (
+                      <p className="text-green-400 text-xs mt-2">
+                        Expire : {new Date(mediaAccess.expires_at).toLocaleString('fr-FR')}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <LockedGallery
+                    ownerUsername={profile.username}
+                    onRequestAccess={handleRequestAccess}
+                    isPending={!!pendingRequest}
+                  />
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>

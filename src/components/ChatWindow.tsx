@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, Send, Minimize2, Maximize2 } from 'lucide-react';
+import { X, Send, Minimize2, Maximize2, Image as ImageIcon } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import MediaAccessSheet from './MediaAccessSheet';
 
 interface ChatWindowProps {
   recipientId: string;
@@ -26,6 +27,7 @@ export default function ChatWindow({ recipientId, recipientName, recipientAvatar
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [minimized, setMinimized] = useState(false);
+  const [showMediaAccessSheet, setShowMediaAccessSheet] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -132,6 +134,13 @@ export default function ChatWindow({ recipientId, recipientName, recipientAvatar
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowMediaAccessSheet(true)}
+            className="w-8 h-8 rounded-lg hover:bg-streetiz-red/10 hover:border-streetiz-red flex items-center justify-center transition-colors border border-transparent"
+            title="Accès médias"
+          >
+            <ImageIcon className="w-4 h-4 text-[#888] hover:text-streetiz-red" />
+          </button>
           {!isFullScreen && (
             <button
               onClick={() => setMinimized(!minimized)}
@@ -221,6 +230,14 @@ export default function ChatWindow({ recipientId, recipientName, recipientAvatar
             </div>
           </form>
         </>
+      )}
+
+      {showMediaAccessSheet && (
+        <MediaAccessSheet
+          targetUserId={recipientId}
+          targetUsername={recipientName}
+          onClose={() => setShowMediaAccessSheet(false)}
+        />
       )}
     </div>
   );
