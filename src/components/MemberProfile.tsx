@@ -2,6 +2,10 @@ import { useState, useEffect } from 'react';
 import { X, MapPin, Users, FileText, Calendar, UserPlus, Check, MessageCircle, ExternalLink, Play, Image as ImageIcon, Video } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import ProfileOptionsMenu from './ProfileOptionsMenu';
+import SendPrivateAlbumModal from './SendPrivateAlbumModal';
+import SendPortfolioModal from './SendPortfolioModal';
+import ReportUserModal from './ReportUserModal';
 
 interface MemberProfileProps {
   userId: string;
@@ -42,6 +46,10 @@ export default function MemberProfile({ userId, onClose }: MemberProfileProps) {
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMedia, setSelectedMedia] = useState<MediaItem | null>(null);
+  const [showPrivateAlbumModal, setShowPrivateAlbumModal] = useState(false);
+  const [showPortfolioModal, setShowPortfolioModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [isBlocked, setIsBlocked] = useState(false);
 
   useEffect(() => {
     loadProfile();
@@ -146,6 +154,63 @@ export default function MemberProfile({ userId, onClose }: MemberProfileProps) {
     }
   };
 
+  const handleAddContact = async () => {
+    if (!user) return;
+    try {
+      await supabase
+        .from('friendships')
+        .insert({
+          user_id: user.id,
+          friend_id: userId,
+          status: 'pending'
+        });
+      alert('Demande de contact envoyée');
+    } catch (error) {
+      console.error('Error adding contact:', error);
+    }
+  };
+
+  const handleShareProfile = () => {
+    if (!profile) return;
+    const profileUrl = `${window.location.origin}/@${profile.username}`;
+    if (navigator.share) {
+      navigator.share({
+        title: `Profil de ${profile.display_name || profile.username}`,
+        url: profileUrl
+      }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(profileUrl);
+      alert('Lien copié dans le presse-papier');
+    }
+  };
+
+  const handleBlock = async () => {
+    if (!user) return;
+
+    try {
+      if (isBlocked) {
+        await supabase
+          .from('user_blocks')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('blocked_user_id', userId);
+        setIsBlocked(false);
+        alert('Utilisateur débloqué');
+      } else {
+        await supabase
+          .from('user_blocks')
+          .insert({
+            user_id: user.id,
+            blocked_user_id: userId
+          });
+        setIsBlocked(true);
+        alert('Utilisateur bloqué');
+      }
+    } catch (error) {
+      console.error('Error toggling block:', error);
+    }
+  };
+
   const getMediaUrl = (item: MediaItem) => {
     if (item.external_url) {
       if (item.external_platform === 'youtube') {
@@ -198,6 +263,19 @@ export default function MemberProfile({ userId, onClose }: MemberProfileProps) {
                     <h2 className="text-3xl font-black text-white">
                       {profile.display_name || profile.username}
                     </h2>
+                    {user && user.id !== userId && (
+                      <ProfileOptionsMenu
+                        targetUserId={userId}
+                        targetUsername={profile.username}
+                        isBlocked={isBlocked}
+                        onAddContact={handleAddContact}
+                        onShareProfile={handleShareProfile}
+                        onSendPrivateAlbum={() => setShowPrivateAlbumModal(true)}
+                        onSendPortfolio={() => setShowPortfolioModal(true)}
+                        onBlock={handleBlock}
+                        onReport={() => setShowReportModal(true)}
+                      />
+                    )}
                     {profile.profile_role && (
                       <span className="bg-streetiz-red/20 text-streetiz-red px-3 py-1 rounded-full text-sm font-bold">
                         {profile.profile_role}
@@ -369,6 +447,42 @@ export default function MemberProfile({ userId, onClose }: MemberProfileProps) {
             onClick={(e) => e.stopPropagation()}
           />
         </div>
+      )}
+
+      {showPrivateAlbumModal && profile && (
+        <SendPrivateAlbumModal
+          targetUserId={userId}
+          targetUsername={profile.username}
+          onClose={() => setShowPrivateAlbumModal(false)}
+          onSent={() => {
+            alert('Album privé envoyé avec succès');
+            setShowPrivateAlbumModal(false);
+          }}
+        />
+      )}
+
+      {showPortfolioModal && profile && (
+        <SendPortfolioModal
+          targetUserId={userId}
+          targetUsername={profile.username}
+          onClose={() => setShowPortfolioModal(false)}
+          onSent={() => {
+            alert('Portfolio envoyé avec succès');
+            setShowPortfolioModal(false);
+          }}
+        />
+      )}
+
+      {showReportModal && profile && (
+        <ReportUserModal
+          targetUserId={userId}
+          targetUsername={profile.username}
+          onClose={() => setShowReportModal(false)}
+          onReported={() => {
+            alert('Signalement envoyé. Notre équipe va examiner ce profil.');
+            setShowReportModal(false);
+          }}
+        />
       )}
     </>
   );

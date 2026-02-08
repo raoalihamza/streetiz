@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, User, Search, Bell, LogOut, Settings } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -14,8 +14,24 @@ export default function Navigation({ currentPage: propCurrentPage, onNavigate: p
   const { user, profile, signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
   const currentPage = propCurrentPage || location.pathname.split('/')[1] || 'home';
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+
+    if (userMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [userMenuOpen]);
 
   const handleNavigate = (page: string) => {
     if (propOnNavigate) {
@@ -139,7 +155,7 @@ export default function Navigation({ currentPage: propCurrentPage, onNavigate: p
               </button>
             )}
             {user ? (
-              <div className="relative">
+              <div className="relative" ref={userMenuRef}>
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                   className="flex items-center space-x-2 px-4 py-2.5 rounded-xl hover:bg-[#1a1a1a] transition-colors"
@@ -151,35 +167,29 @@ export default function Navigation({ currentPage: propCurrentPage, onNavigate: p
                 </button>
 
                 {userMenuOpen && (
-                  <>
-                    <div
-                      className="fixed inset-0 z-40"
-                      onClick={() => setUserMenuOpen(false)}
-                    />
-                    <div className="absolute right-0 top-full mt-2 w-56 bg-[#1a1a1a] border border-[#333] rounded-xl shadow-xl z-50 overflow-hidden">
-                      <button
-                        onClick={() => {
-                          handleNavigate('dashboard');
-                          setUserMenuOpen(false);
-                        }}
-                        className="w-full px-4 py-3 text-left hover:bg-[#222] transition-colors flex items-center space-x-3 text-white"
-                      >
-                        <Settings className="w-4 h-4" />
-                        <span className="text-sm font-semibold">Dashboard</span>
-                      </button>
-                      <div className="border-t border-[#333]" />
-                      <button
-                        onClick={() => {
-                          signOut();
-                          setUserMenuOpen(false);
-                        }}
-                        className="w-full px-4 py-3 text-left hover:bg-[#222] transition-colors flex items-center space-x-3 text-streetiz-red"
-                      >
-                        <LogOut className="w-4 h-4" />
-                        <span className="text-sm font-semibold">Se déconnecter</span>
-                      </button>
-                    </div>
-                  </>
+                  <div className="absolute right-0 top-full mt-2 w-56 bg-[#1a1a1a] border border-[#333] rounded-xl shadow-xl overflow-hidden z-[100]">
+                    <button
+                      onClick={() => {
+                        handleNavigate('dashboard');
+                        setUserMenuOpen(false);
+                      }}
+                      className="w-full px-4 py-3 text-left hover:bg-[#222] transition-colors flex items-center space-x-3 text-white"
+                    >
+                      <Settings className="w-4 h-4" />
+                      <span className="text-sm font-semibold">Dashboard</span>
+                    </button>
+                    <div className="border-t border-[#333]" />
+                    <button
+                      onClick={() => {
+                        signOut();
+                        setUserMenuOpen(false);
+                      }}
+                      className="w-full px-4 py-3 text-left hover:bg-[#222] transition-colors flex items-center space-x-3 text-streetiz-red"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      <span className="text-sm font-semibold">Se déconnecter</span>
+                    </button>
+                  </div>
                 )}
               </div>
             ) : (

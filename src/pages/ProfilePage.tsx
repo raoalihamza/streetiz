@@ -505,9 +505,24 @@ export default function ProfilePage({ profileId: propProfileId, onClose, onOpenC
                     className="w-32 h-32 rounded-2xl border-4 border-[#0a0a0a] object-cover shadow-xl relative z-20"
                   />
                   <div className="mb-2">
-                    <h1 className="text-3xl font-black text-white mb-1">
-                      {profile.display_name || profile.username}
-                    </h1>
+                    <div className="flex items-center gap-3 mb-1">
+                      <h1 className="text-3xl font-black text-white">
+                        {profile.display_name || profile.username}
+                      </h1>
+                      {!isOwnProfile && user && (
+                        <ProfileOptionsMenu
+                          targetUserId={profile.id}
+                          targetUsername={profile.username}
+                          isBlocked={isBlocked}
+                          onAddContact={handleAddContact}
+                          onShareProfile={handleShareProfile}
+                          onSendPrivateAlbum={() => setShowPrivateAlbumModal(true)}
+                          onSendPortfolio={() => setShowPortfolioModal(true)}
+                          onBlock={handleBlock}
+                          onReport={() => setShowReportModal(true)}
+                        />
+                      )}
+                    </div>
                     <p className="text-[#888] mb-2">@{profile.username}</p>
                   </div>
                 </div>
@@ -571,18 +586,6 @@ export default function ProfilePage({ profileId: propProfileId, onClose, onOpenC
                         <MessageCircle className="w-4 h-4" />
                         Message
                       </button>
-
-                      <ProfileOptionsMenu
-                        targetUserId={profile.id}
-                        targetUsername={profile.username}
-                        isBlocked={isBlocked}
-                        onAddContact={handleAddContact}
-                        onShareProfile={handleShareProfile}
-                        onSendPrivateAlbum={() => setShowPrivateAlbumModal(true)}
-                        onSendPortfolio={() => setShowPortfolioModal(true)}
-                        onBlock={handleBlock}
-                        onReport={() => setShowReportModal(true)}
-                      />
                     </>
                   )}
                 </div>
