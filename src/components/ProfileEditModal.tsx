@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Upload, Link as LinkIcon, Trash2, Plus, Save, Music } from 'lucide-react';
+import { X, Upload, Link as LinkIcon, Trash2, Plus, Save, Music, Film, Image as ImageIcon } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -81,6 +81,7 @@ export default function ProfileEditModal({ onClose, onSave }: ProfileEditModalPr
   const [newVideoUrl, setNewVideoUrl] = useState('');
   const [newVideoPlatform, setNewVideoPlatform] = useState<'youtube' | 'tiktok'>('youtube');
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [showAddMediaModal, setShowAddMediaModal] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -547,12 +548,16 @@ export default function ProfileEditModal({ onClose, onSave }: ProfileEditModalPr
             <div className="space-y-4">
               <h3 className="text-white font-black text-lg flex items-center gap-2">
                 <Upload className="w-5 h-5 text-streetiz-red" />
-                Photos ({photos.length}/9)
+                Media ({photos.length} photos, {videos.length} vidéos)
               </h3>
               <div className="grid grid-cols-3 gap-4">
                 {photos.map((photo, index) => (
-                  <div key={index} className="relative aspect-square rounded-xl overflow-hidden bg-[#111] group">
+                  <div key={`photo-${index}`} className="relative aspect-square rounded-xl overflow-hidden bg-[#111] group">
                     <img src={photo.media_url} alt="" className="w-full h-full object-cover" />
+                    <div className="absolute top-2 left-2 px-2 py-1 bg-black/70 backdrop-blur-sm rounded-full flex items-center gap-1">
+                      <ImageIcon className="w-3 h-3 text-white" />
+                      <span className="text-xs text-white font-semibold">Photo</span>
+                    </div>
                     <button
                       onClick={() => handleRemovePhoto(index)}
                       className="absolute top-2 right-2 w-8 h-8 bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
@@ -561,114 +566,36 @@ export default function ProfileEditModal({ onClose, onSave }: ProfileEditModalPr
                     </button>
                   </div>
                 ))}
-              </div>
-              {photos.length < 9 && (
-                <div className="space-y-3">
-                  <div className="relative">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={handleFileUpload}
-                      disabled={uploadingPhoto}
-                      className="hidden"
-                      id="photo-upload"
-                    />
-                    <label
-                      htmlFor="photo-upload"
-                      className={`w-full px-6 py-4 bg-gradient-to-r from-streetiz-red to-red-600 hover:from-red-600 hover:to-streetiz-red text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                        uploadingPhoto ? 'opacity-50 cursor-not-allowed' : ''
-                      }`}
-                    >
-                      {uploadingPhoto ? (
-                        <>
-                          <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                          Chargement...
-                        </>
-                      ) : (
-                        <>
-                          <Upload className="w-5 h-5" />
-                          Upload Photos (Max 5MB chacune)
-                        </>
-                      )}
-                    </label>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1 h-px bg-[#222]"></div>
-                    <span className="text-[#666] text-sm font-semibold">OU</span>
-                    <div className="flex-1 h-px bg-[#222]"></div>
-                  </div>
-                  <div className="flex gap-2">
-                    <input
-                      type="url"
-                      value={newPhotoUrl}
-                      onChange={(e) => setNewPhotoUrl(e.target.value)}
-                      placeholder="URL de la photo (ex: Pexels, Unsplash)"
-                      className="flex-1 bg-[#111] text-white px-4 py-3 rounded-xl border border-[#222] focus:border-streetiz-red outline-none"
-                    />
-                    <button
-                      onClick={handleAddPhoto}
-                      className="px-6 py-3 bg-[#222] hover:bg-[#333] text-white rounded-xl font-bold transition-colors flex items-center gap-2"
-                    >
-                      <Plus className="w-5 h-5" />
-                      Add
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-4">
-              <h3 className="text-white font-black text-lg flex items-center gap-2">
-                <Upload className="w-5 h-5 text-streetiz-red" />
-                Videos ({videos.length}/3)
-              </h3>
-              <div className="space-y-4">
                 {videos.map((video, index) => (
-                  <div key={index} className="relative bg-[#111] rounded-xl p-4 border border-[#222] group">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <p className="text-white font-semibold">{video.external_platform || 'Video'}</p>
-                        <p className="text-[#666] text-sm truncate">{video.external_url}</p>
-                      </div>
-                      <button
-                        onClick={() => handleRemoveVideo(index)}
-                        className="w-10 h-10 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center transition-colors"
-                      >
-                        <Trash2 className="w-5 h-5 text-white" />
-                      </button>
+                  <div key={`video-${index}`} className="relative aspect-square rounded-xl overflow-hidden bg-[#111] group flex items-center justify-center border border-[#222]">
+                    <div className="text-center p-4">
+                      <Film className="w-12 h-12 text-streetiz-red mx-auto mb-2" />
+                      <p className="text-white text-xs font-semibold truncate">{video.external_platform || 'Video'}</p>
                     </div>
+                    <div className="absolute top-2 left-2 px-2 py-1 bg-black/70 backdrop-blur-sm rounded-full flex items-center gap-1">
+                      <Film className="w-3 h-3 text-white" />
+                      <span className="text-xs text-white font-semibold">Vidéo</span>
+                    </div>
+                    <button
+                      onClick={() => handleRemoveVideo(index)}
+                      className="absolute top-2 right-2 w-8 h-8 bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2 className="w-4 h-4 text-white" />
+                    </button>
                   </div>
                 ))}
-              </div>
-              {videos.length < 3 && (
-                <div className="space-y-2">
-                  <select
-                    value={newVideoPlatform}
-                    onChange={(e) => setNewVideoPlatform(e.target.value as 'youtube' | 'tiktok')}
-                    className="w-full bg-[#111] text-white px-4 py-3 rounded-xl border border-[#222] focus:border-streetiz-red outline-none"
+                {(photos.length + videos.length) < 12 && (
+                  <button
+                    onClick={() => setShowAddMediaModal(true)}
+                    className="aspect-square rounded-xl bg-[#111] border-2 border-dashed border-[#333] hover:border-streetiz-red hover:bg-[#1a1a1a] transition-all flex flex-col items-center justify-center gap-2 group"
                   >
-                    <option value="youtube">YouTube</option>
-                    <option value="tiktok">TikTok</option>
-                  </select>
-                  <div className="flex gap-2">
-                    <input
-                      type="url"
-                      value={newVideoUrl}
-                      onChange={(e) => setNewVideoUrl(e.target.value)}
-                      placeholder="Video URL"
-                      className="flex-1 bg-[#111] text-white px-4 py-3 rounded-xl border border-[#222] focus:border-streetiz-red outline-none"
-                    />
-                    <button
-                      onClick={handleAddVideo}
-                      className="px-6 py-3 bg-streetiz-red hover:bg-red-600 text-white rounded-xl font-bold transition-colors flex items-center gap-2"
-                    >
-                      <Plus className="w-5 h-5" />
-                      Add
-                    </button>
-                  </div>
-                </div>
-              )}
+                    <div className="w-12 h-12 rounded-full bg-streetiz-red/20 group-hover:bg-streetiz-red/30 flex items-center justify-center transition-colors">
+                      <Plus className="w-6 h-6 text-streetiz-red" />
+                    </div>
+                    <span className="text-[#666] group-hover:text-white text-sm font-semibold transition-colors">Ajouter</span>
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="space-y-4">
@@ -809,6 +736,148 @@ export default function ProfileEditModal({ onClose, onSave }: ProfileEditModalPr
           </div>
         </div>
       </div>
+
+      {showAddMediaModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+          <div className="w-full max-w-lg bg-[#0a0a0a] rounded-2xl border border-[#222] overflow-hidden">
+            <div className="flex items-center justify-between p-6 border-b border-[#222]">
+              <h3 className="text-xl font-black text-white">Ajouter un média</h3>
+              <button
+                onClick={() => {
+                  setShowAddMediaModal(false);
+                  setNewPhotoUrl('');
+                  setNewVideoUrl('');
+                }}
+                className="w-10 h-10 bg-[#111] hover:bg-[#222] rounded-full flex items-center justify-center transition-colors"
+              >
+                <X className="w-5 h-5 text-white" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {photos.length < 9 && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-streetiz-red/20 rounded-xl flex items-center justify-center">
+                      <ImageIcon className="w-5 h-5 text-streetiz-red" />
+                    </div>
+                    <div>
+                      <h4 className="text-white font-bold">Photo</h4>
+                      <p className="text-[#666] text-sm">Upload ou URL ({photos.length}/9)</p>
+                    </div>
+                  </div>
+
+                  <div className="relative">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={(e) => {
+                        handleFileUpload(e);
+                        setShowAddMediaModal(false);
+                      }}
+                      disabled={uploadingPhoto}
+                      className="hidden"
+                      id="photo-upload-modal"
+                    />
+                    <label
+                      htmlFor="photo-upload-modal"
+                      className={`w-full px-6 py-4 bg-gradient-to-r from-streetiz-red to-red-600 hover:from-red-600 hover:to-streetiz-red text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                        uploadingPhoto ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
+                    >
+                      {uploadingPhoto ? (
+                        <>
+                          <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                          Chargement...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-5 h-5" />
+                          Upload Photos (Max 5MB)
+                        </>
+                      )}
+                    </label>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 h-px bg-[#222]"></div>
+                    <span className="text-[#666] text-sm font-semibold">OU</span>
+                    <div className="flex-1 h-px bg-[#222]"></div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      value={newPhotoUrl}
+                      onChange={(e) => setNewPhotoUrl(e.target.value)}
+                      placeholder="URL de la photo (ex: Pexels, Unsplash)"
+                      className="flex-1 bg-[#111] text-white px-4 py-3 rounded-xl border border-[#222] focus:border-streetiz-red outline-none"
+                    />
+                    <button
+                      onClick={() => {
+                        handleAddPhoto();
+                        setShowAddMediaModal(false);
+                      }}
+                      className="px-6 py-3 bg-[#222] hover:bg-[#333] text-white rounded-xl font-bold transition-colors flex items-center gap-2"
+                    >
+                      <Plus className="w-5 h-5" />
+                      Add
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {videos.length < 3 && photos.length < 9 && (
+                <div className="h-px bg-[#222]"></div>
+              )}
+
+              {videos.length < 3 && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-streetiz-red/20 rounded-xl flex items-center justify-center">
+                      <Film className="w-5 h-5 text-streetiz-red" />
+                    </div>
+                    <div>
+                      <h4 className="text-white font-bold">Vidéo</h4>
+                      <p className="text-[#666] text-sm">YouTube ou TikTok ({videos.length}/3)</p>
+                    </div>
+                  </div>
+
+                  <select
+                    value={newVideoPlatform}
+                    onChange={(e) => setNewVideoPlatform(e.target.value as 'youtube' | 'tiktok')}
+                    className="w-full bg-[#111] text-white px-4 py-3 rounded-xl border border-[#222] focus:border-streetiz-red outline-none"
+                  >
+                    <option value="youtube">YouTube</option>
+                    <option value="tiktok">TikTok</option>
+                  </select>
+
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      value={newVideoUrl}
+                      onChange={(e) => setNewVideoUrl(e.target.value)}
+                      placeholder="Video URL"
+                      className="flex-1 bg-[#111] text-white px-4 py-3 rounded-xl border border-[#222] focus:border-streetiz-red outline-none"
+                    />
+                    <button
+                      onClick={() => {
+                        handleAddVideo();
+                        setShowAddMediaModal(false);
+                      }}
+                      className="px-6 py-3 bg-gradient-to-r from-streetiz-red to-red-600 hover:from-red-600 hover:to-streetiz-red text-white rounded-xl font-bold transition-all flex items-center gap-2"
+                    >
+                      <Plus className="w-5 h-5" />
+                      Add
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

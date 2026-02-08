@@ -720,66 +720,74 @@ export default function ProfilePage({ profileId: propProfileId, onClose, onOpenC
               )}
 
               {activeTab === 'media' && (
-                <div className="space-y-8">
-                  {photos.length > 0 && (
-                    <div>
-                      <h3 className="text-white font-black text-xl mb-4 flex items-center gap-2">
+                <div className="space-y-6">
+                  {(photos.length > 0 || videos.length > 0) ? (
+                    <>
+                      <h3 className="text-white font-black text-xl flex items-center gap-2">
                         <ImageIcon className="w-5 h-5 text-streetiz-red" />
-                        Photos ({photos.length}/6)
+                        Media Gallery ({photos.length} photos, {videos.length} vidéos)
                       </h3>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                         {photos.map((photo) => (
-                          <button
-                            key={photo.id}
-                            onClick={() => setLightboxImage(photo.media_url)}
-                            className="aspect-square rounded-xl overflow-hidden hover:opacity-80 transition-opacity"
-                          >
-                            <img
-                              src={photo.media_url}
-                              alt="Profile media"
-                              className="w-full h-full object-cover"
-                            />
-                          </button>
+                          <div key={photo.id} className="relative aspect-square rounded-xl overflow-hidden group">
+                            <button
+                              onClick={() => setLightboxImage(photo.media_url)}
+                              className="w-full h-full"
+                            >
+                              <img
+                                src={photo.media_url}
+                                alt="Profile media"
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                              />
+                            </button>
+                            <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/70 backdrop-blur-sm rounded-full flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <ImageIcon className="w-3 h-3 text-white" />
+                              <span className="text-xs text-white font-semibold">Photo</span>
+                            </div>
+                          </div>
                         ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {videos.length > 0 && (
-                    <div>
-                      <h3 className="text-white font-black text-xl mb-4 flex items-center gap-2">
-                        <Film className="w-5 h-5 text-streetiz-red" />
-                        Videos ({videos.length}/3)
-                      </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {videos.map((video) => (
-                          <div
-                            key={video.id}
-                            className="aspect-video rounded-xl overflow-hidden bg-[#111] relative"
-                          >
-                            {video.external_platform === 'youtube' && video.external_url ? (
-                              <iframe
-                                src={getVideoEmbedUrl(video.external_url, video.external_platform)}
-                                className="w-full h-full"
-                                allowFullScreen
-                              />
-                            ) : video.media_url ? (
-                              <video
-                                src={video.media_url}
-                                controls
-                                className="w-full h-full"
-                              />
-                            ) : null}
+                          <div key={video.id} className="relative aspect-square rounded-xl overflow-hidden bg-[#111] border border-[#222] group">
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              {video.external_platform === 'youtube' && video.external_url ? (
+                                <iframe
+                                  src={getVideoEmbedUrl(video.external_url, video.external_platform)}
+                                  className="w-full h-full"
+                                  allowFullScreen
+                                />
+                              ) : video.media_url ? (
+                                <video
+                                  src={video.media_url}
+                                  controls
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="text-center p-4">
+                                  <Film className="w-12 h-12 text-streetiz-red mx-auto mb-2" />
+                                  <p className="text-white text-xs font-semibold">{video.external_platform || 'Video'}</p>
+                                </div>
+                              )}
+                            </div>
+                            <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/70 backdrop-blur-sm rounded-full flex items-center gap-1">
+                              <Film className="w-3 h-3 text-white" />
+                              <span className="text-xs text-white font-semibold">Vidéo</span>
+                            </div>
                           </div>
                         ))}
                       </div>
-                    </div>
-                  )}
-
-                  {photos.length === 0 && videos.length === 0 && (
-                    <div className="text-center py-12">
-                      <ImageIcon className="w-16 h-16 text-[#333] mx-auto mb-4" />
-                      <p className="text-[#666]">No media uploaded yet</p>
+                    </>
+                  ) : (
+                    <div className="text-center py-16">
+                      <div className="w-20 h-20 bg-[#111] rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <ImageIcon className="w-10 h-10 text-[#333]" />
+                      </div>
+                      <p className="text-white font-bold text-lg mb-2">Aucun média</p>
+                      <p className="text-[#666]">
+                        {isOwnProfile
+                          ? "Ajoutez des photos et vidéos pour les partager avec la communauté"
+                          : "Ce membre n'a pas encore ajouté de médias"
+                        }
+                      </p>
                     </div>
                   )}
                 </div>
