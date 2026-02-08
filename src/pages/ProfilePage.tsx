@@ -475,25 +475,47 @@ export default function ProfilePage({ profileId: propProfileId, onClose, onOpenC
                 backgroundPosition: 'center'
               } : {}}
             >
-              {isOwnProfile && (
-                <div className="absolute top-4 right-4">
-                  <LibreTonightButton
-                    userId={profile.id}
-                    isOwnProfile={isOwnProfile}
-                    availableTonight={profile.available_tonight}
-                    tonightLocationType={profile.tonight_location_type}
-                    tonightLocationValue={profile.tonight_location_value}
-                    availableTonightUpdatedAt={profile.available_tonight_updated_at}
-                    onUpdate={() => {
-                      if (username) {
-                        loadProfileByUsername();
-                      } else if (profileId) {
-                        loadProfile();
-                      }
-                    }}
+              <div className="absolute top-4 right-4 flex items-center gap-3">
+                {isOwnProfile && (
+                  <>
+                    <LibreTonightButton
+                      userId={profile.id}
+                      isOwnProfile={isOwnProfile}
+                      availableTonight={profile.available_tonight}
+                      tonightLocationType={profile.tonight_location_type}
+                      tonightLocationValue={profile.tonight_location_value}
+                      availableTonightUpdatedAt={profile.available_tonight_updated_at}
+                      onUpdate={() => {
+                        if (username) {
+                          loadProfileByUsername();
+                        } else if (profileId) {
+                          loadProfile();
+                        }
+                      }}
+                    />
+                    <button
+                      onClick={() => setShowEditModal(true)}
+                      className="px-6 py-2.5 bg-gradient-to-r from-streetiz-red to-red-600 hover:from-red-600 hover:to-streetiz-red text-white rounded-full font-bold transition-all flex items-center gap-2"
+                    >
+                      <Edit className="w-4 h-4" />
+                      Edit Profile
+                    </button>
+                  </>
+                )}
+                {!isOwnProfile && user && (
+                  <ProfileOptionsMenu
+                    targetUserId={profile.id}
+                    targetUsername={profile.username}
+                    isBlocked={isBlocked}
+                    onAddContact={handleAddContact}
+                    onShareProfile={handleShareProfile}
+                    onSendPrivateAlbum={() => setShowPrivateAlbumModal(true)}
+                    onSendPortfolio={() => setShowPortfolioModal(true)}
+                    onBlock={handleBlock}
+                    onReport={() => setShowReportModal(true)}
                   />
-                </div>
-              )}
+                )}
+              </div>
             </div>
 
             <div className="px-8 pb-8">
@@ -505,38 +527,15 @@ export default function ProfilePage({ profileId: propProfileId, onClose, onOpenC
                     className="w-32 h-32 rounded-2xl border-4 border-[#0a0a0a] object-cover shadow-xl relative z-20"
                   />
                   <div className="mb-2">
-                    <div className="flex items-center gap-3 mb-1">
-                      <h1 className="text-3xl font-black text-white">
-                        {profile.display_name || profile.username}
-                      </h1>
-                      {!isOwnProfile && user && (
-                        <ProfileOptionsMenu
-                          targetUserId={profile.id}
-                          targetUsername={profile.username}
-                          isBlocked={isBlocked}
-                          onAddContact={handleAddContact}
-                          onShareProfile={handleShareProfile}
-                          onSendPrivateAlbum={() => setShowPrivateAlbumModal(true)}
-                          onSendPortfolio={() => setShowPortfolioModal(true)}
-                          onBlock={handleBlock}
-                          onReport={() => setShowReportModal(true)}
-                        />
-                      )}
-                    </div>
+                    <h1 className="text-3xl font-black text-white mb-1">
+                      {profile.display_name || profile.username}
+                    </h1>
                     <p className="text-[#888] mb-2">@{profile.username}</p>
                   </div>
                 </div>
 
                 <div className="flex gap-3 mt-4 md:mt-0">
-                  {isOwnProfile ? (
-                    <button
-                      onClick={() => setShowEditModal(true)}
-                      className="px-6 py-3 bg-gradient-to-r from-streetiz-red to-red-600 hover:from-red-600 hover:to-streetiz-red text-white rounded-full font-bold transition-all flex items-center gap-2"
-                    >
-                      <Edit className="w-4 h-4" />
-                      Edit Profile
-                    </button>
-                  ) : user && (
+                  {!isOwnProfile && user && (
                     <>
                       <button
                         onClick={handleFollow}

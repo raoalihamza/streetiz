@@ -92,6 +92,20 @@ export default function SendPrivateAlbumModal({
 
     setSending(true);
     try {
+      const { data: canSend, error: rateLimitError } = await supabase
+        .rpc('check_private_album_rate_limit', {
+          sender_id: user.id,
+          target_id: targetUserId
+        });
+
+      if (rateLimitError) throw rateLimitError;
+
+      if (!canSend) {
+        alert('Limite atteinte : maximum 3 albums privés par 24h à cette personne');
+        setSending(false);
+        return;
+      }
+
       let expiresAt = null;
       if (duration === '5m') {
         expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();

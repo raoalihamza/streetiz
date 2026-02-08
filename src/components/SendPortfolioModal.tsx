@@ -40,6 +40,20 @@ export default function SendPortfolioModal({
 
     setSending(true);
     try {
+      const { data: canSend, error: rateLimitError } = await supabase
+        .rpc('check_portfolio_rate_limit', {
+          sender_id: user.id,
+          target_id: targetUserId
+        });
+
+      if (rateLimitError) throw rateLimitError;
+
+      if (!canSend) {
+        alert('Limite atteinte : maximum 5 portfolios par 24h à cette personne');
+        setSending(false);
+        return;
+      }
+
       const { error } = await supabase
         .from('portfolio_shares')
         .insert({
