@@ -335,7 +335,7 @@ export default function CommunityPage({ onNavigate }: CommunityPageProps) {
   return (
     <div className="min-h-screen bg-[#0D0D0D] pt-20">
       <div className="max-w-[1900px] mx-auto px-4 lg:px-6">
-        <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] xl:grid-cols-[320px_1fr_360px] gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[320px_minmax(0,800px)] xl:grid-cols-[320px_minmax(0,800px)_360px] gap-6 justify-center">
 
           {/* LEFT SIDEBAR */}
           <aside className="hidden lg:block">
