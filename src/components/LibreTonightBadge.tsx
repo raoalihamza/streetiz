@@ -1,12 +1,21 @@
-import { Zap, MapPin } from 'lucide-react';
+import { Zap, MapPin, Music, Headphones, Home, Users, Sparkles } from 'lucide-react';
 
 interface LibreTonightBadgeProps {
   locationValue?: string;
   updatedAt?: string;
   size?: 'sm' | 'md' | 'lg';
+  preferences?: string[];
 }
 
-export default function LibreTonightBadge({ locationValue, updatedAt, size = 'md' }: LibreTonightBadgeProps) {
+const PREFERENCE_LABELS: Record<string, { label: string; icon: any }> = {
+  bar_dansant: { label: 'Bar Dansant', icon: Music },
+  soiree_techno: { label: 'Soirée Techno', icon: Headphones },
+  soiree_privee_after: { label: 'Soirée Privée / After', icon: Home },
+  training_danse: { label: 'Training Danse', icon: Users },
+  decouverte_spot: { label: 'Découverte / New Spot', icon: Sparkles }
+};
+
+export default function LibreTonightBadge({ locationValue, updatedAt, size = 'md', preferences = [] }: LibreTonightBadgeProps) {
   const getTimeAgo = (timestamp?: string) => {
     if (!timestamp) return '';
     const now = new Date();
@@ -41,8 +50,8 @@ export default function LibreTonightBadge({ locationValue, updatedAt, size = 'md
   const classes = sizeClasses[size];
 
   return (
-    <div className="inline-flex flex-col gap-1">
-      <div className={`inline-flex items-center gap-1.5 bg-streetiz-red/20 text-streetiz-red border border-streetiz-red/30 rounded-full font-bold ${classes.badge}`}>
+    <div className="inline-flex flex-col gap-2">
+      <div className={`inline-flex items-center gap-1.5 bg-gradient-to-r from-purple-600/20 to-pink-600/20 text-purple-400 border border-purple-500/30 rounded-full font-bold ${classes.badge}`}>
         <Zap className={`${classes.icon} animate-pulse`} />
         <span>Libre Tonight</span>
       </div>
@@ -50,6 +59,24 @@ export default function LibreTonightBadge({ locationValue, updatedAt, size = 'md
         <div className="flex items-center gap-1 text-[#888] ml-1">
           <MapPin className="w-3 h-3" />
           <span className={`${classes.text} font-medium`}>{locationValue}</span>
+        </div>
+      )}
+      {preferences && preferences.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mt-1">
+          {preferences.map((pref) => {
+            const prefData = PREFERENCE_LABELS[pref];
+            if (!prefData) return null;
+            const Icon = prefData.icon;
+            return (
+              <div
+                key={pref}
+                className="inline-flex items-center gap-1 px-2 py-1 bg-purple-500/10 border border-purple-500/20 rounded-lg text-purple-300 text-xs font-semibold"
+              >
+                <Icon className="w-3 h-3" />
+                <span>{prefData.label}</span>
+              </div>
+            );
+          })}
         </div>
       )}
       {updatedAt && (

@@ -146,6 +146,7 @@ export default function OnlineMembers({ onViewProfile, onOpenChat }: OnlineMembe
                   {member.free_tonight && (
                     <LibreTonightBadge
                       locationValue={member.out_location}
+                      preferences={member.ltn_preferences}
                       size="sm"
                     />
                   )}
