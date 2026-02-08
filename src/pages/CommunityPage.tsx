@@ -346,7 +346,14 @@ export default function CommunityPage({ onNavigate }: CommunityPageProps) {
                 <div className="p-4">
                   <div className="relative">
                     <button
-                      onClick={() => setShowCreateMenu(!showCreateMenu)}
+                      onClick={() => {
+                        if (!user) {
+                          alert('Vous devez être connecté pour créer du contenu');
+                          navigate('/login');
+                          return;
+                        }
+                        setShowCreateMenu(!showCreateMenu);
+                      }}
                       className="w-full bg-gradient-to-r from-streetiz-red to-red-600 hover:from-red-600 hover:to-streetiz-red text-white font-black py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-streetiz-red/30 hover:shadow-streetiz-red/50 hover:scale-[1.02]"
                     >
                       <Plus className="w-5 h-5" />
@@ -804,8 +811,6 @@ export default function CommunityPage({ onNavigate }: CommunityPageProps) {
           }}
         />
       )}
-
-      <SeedDataButton />
     </div>
   );
 }

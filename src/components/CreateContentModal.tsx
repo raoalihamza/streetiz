@@ -26,7 +26,10 @@ export default function CreateContentModal({ initialType = 'post', onClose, onSu
   const categories = ['Electro', 'House', 'Techno', 'Afro House', 'Drum & Bass', 'Trance'];
 
   const handleSubmit = async () => {
-    if (!user) return;
+    if (!user) {
+      alert('Vous devez être connecté pour publier du contenu');
+      return;
+    }
     if (!content && !title) return;
 
     setLoading(true);

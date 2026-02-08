@@ -26,7 +26,11 @@ export default function CreateForumTopicModal({ onClose, onSuccess }: CreateForu
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !content.trim() || !user || submitting) return;
+    if (!user) {
+      alert('Vous devez être connecté pour créer un topic');
+      return;
+    }
+    if (!title.trim() || !content.trim() || submitting) return;
 
     setSubmitting(true);
     try {

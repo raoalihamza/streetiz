@@ -37,7 +37,11 @@ export default function CreateCastingModal({ onClose, onSuccess }: CreateCasting
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !description.trim() || !location.trim() || !user || submitting) return;
+    if (!user) {
+      alert('Vous devez être connecté pour créer une annonce');
+      return;
+    }
+    if (!title.trim() || !description.trim() || !location.trim() || submitting) return;
 
     setSubmitting(true);
     try {
