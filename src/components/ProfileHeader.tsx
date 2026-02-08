@@ -1,7 +1,7 @@
 import { UserPlus, UserCheck, MessageCircle, Calendar, CheckCircle, MapPin } from 'lucide-react';
 
-const DEFAULT_BANNER = 'https://streetiz-cdn.s3.eu/defaults/default_cover.jpg';
-const DEFAULT_AVATAR = 'https://streetiz-cdn.s3.eu/defaults/default_avatar.jpg';
+const DEFAULT_BANNER = 'https://images.pexels.com/photos/1763075/pexels-photo-1763075.jpeg?auto=compress&cs=tinysrgb&w=1920';
+const DEFAULT_AVATAR = 'https://images.pexels.com/photos/1804913/pexels-photo-1804913.jpeg?auto=compress&cs=tinysrgb&w=400';
 
 interface ProfileHeaderProps {
   profile: any;
