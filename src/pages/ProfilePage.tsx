@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   MapPin, Globe, Users, Edit, MessageCircle, UserPlus, UserCheck, X,
   Instagram, Music, Video, ExternalLink, Play, Image as ImageIcon, Film,
-  Share2, MoreVertical, ArrowLeft
+  Share2, MoreVertical, ArrowLeft, Calendar
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -93,6 +93,13 @@ export default function ProfilePage({ profileId: propProfileId, onClose, onOpenC
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [playingVideo, setPlayingVideo] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [upcomingEvents, setUpcomingEvents] = useState<Array<{
+    id: string;
+    title: string;
+    event_date: string;
+    location: string;
+    event_type: string;
+  }>>([]);
 
   const profileId = propProfileId;
   const isModalMode = !!onClose;
@@ -116,6 +123,7 @@ export default function ProfilePage({ profileId: propProfileId, onClose, onOpenC
   useEffect(() => {
     if (profile?.id) {
       loadMedia();
+      loadUpcomingEvents();
     }
   }, [profile?.id]);
 
@@ -194,6 +202,24 @@ export default function ProfilePage({ profileId: propProfileId, onClose, onOpenC
       setPosts(data || []);
     } catch (error) {
       console.error('Error loading posts:', error);
+    }
+  };
+
+  const loadUpcomingEvents = async () => {
+    if (!profile?.id) return;
+    try {
+      const { data, error } = await supabase
+        .from('user_agenda_events')
+        .select('id, title, event_date, location, event_type')
+        .eq('user_id', profile.id)
+        .gte('event_date', new Date().toISOString())
+        .order('event_date', { ascending: true })
+        .limit(5);
+
+      if (error) throw error;
+      setUpcomingEvents(data || []);
+    } catch (error) {
+      console.error('Error loading upcoming events:', error);
     }
   };
 
@@ -388,12 +414,12 @@ export default function ProfilePage({ profileId: propProfileId, onClose, onOpenC
             </div>
 
             <div className="px-8 pb-8">
-              <div className="flex flex-col md:flex-row md:items-end md:justify-between -mt-16 mb-6">
+              <div className="flex flex-col md:flex-row md:items-end md:justify-between -mt-16 mb-6 relative z-20">
                 <div className="flex items-end gap-6">
                   <img
                     src={profile.avatar_url || 'https://images.pexels.com/photos/1804913/pexels-photo-1804913.jpeg?auto=compress&cs=tinysrgb&w=400'}
                     alt={profile.username}
-                    className="w-32 h-32 rounded-2xl border-4 border-[#0a0a0a] object-cover shadow-xl"
+                    className="w-32 h-32 rounded-2xl border-4 border-[#0a0a0a] object-cover shadow-xl relative z-20"
                   />
                   <div className="mb-2">
                     <h1 className="text-3xl font-black text-white mb-1">
@@ -651,6 +677,50 @@ export default function ProfilePage({ profileId: propProfileId, onClose, onOpenC
                       {profile.bio || 'No bio provided yet.'}
                     </p>
                   </div>
+
+                  {upcomingEvents.length > 0 && (
+                    <div>
+                      <h3 className="text-white font-black text-xl mb-4 flex items-center gap-2">
+                        <Calendar className="w-5 h-5 text-streetiz-red" />
+                        Prochains événements
+                      </h3>
+                      <div className="space-y-3">
+                        {upcomingEvents.map((event) => (
+                          <div
+                            key={event.id}
+                            className="bg-[#111] border border-[#222] rounded-xl p-4 hover:border-[#333] transition-colors"
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className="text-2xl">
+                                {event.event_type === 'performance' ? '🎧' :
+                                 event.event_type === 'workshop' ? '💃' :
+                                 event.event_type === 'battle' ? '⚔️' :
+                                 event.event_type === 'event' ? '🎪' : '📅'}
+                              </div>
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="text-xs font-bold text-[#888]">
+                                    {new Date(event.event_date).toLocaleDateString('fr-FR', {
+                                      day: 'numeric',
+                                      month: 'long',
+                                      year: 'numeric'
+                                    })}
+                                  </span>
+                                </div>
+                                <h5 className="text-white font-bold text-sm mb-1">{event.title}</h5>
+                                {event.location && (
+                                  <p className="text-[#888] text-xs flex items-center gap-1">
+                                    <MapPin className="w-3 h-3" />
+                                    {event.location}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   <div>
                     <h3 className="text-white font-black text-xl mb-4">Member Since</h3>
