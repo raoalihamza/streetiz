@@ -26,12 +26,20 @@ export default function Navigation({ currentPage: propCurrentPage, onNavigate: p
     setMobileMenuOpen(false);
   };
 
+  const handleLogoClick = () => {
+    if (currentPage === 'community' && user && profile?.username) {
+      navigate(`/profile/${profile.username}`);
+    } else {
+      handleNavigate('home');
+    }
+  };
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0a0a0a]/80 backdrop-blur-xl border-b border-[#222222]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           <button
-            onClick={() => handleNavigate('home')}
+            onClick={handleLogoClick}
             className="flex items-center group"
           >
             <span className="text-2xl font-black tracking-wider">

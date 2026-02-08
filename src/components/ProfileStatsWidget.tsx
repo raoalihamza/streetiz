@@ -83,7 +83,10 @@ export default function ProfileStatsWidget() {
 
       <div className="relative p-5">
         <div className="flex items-start gap-4">
-          <div className="relative">
+          <button
+            onClick={handleViewProfile}
+            className="relative flex-shrink-0 cursor-pointer"
+          >
             <div className="w-16 h-16 rounded-full ring-2 ring-streetiz-red/20 group-hover:ring-streetiz-red/50 transition-all overflow-hidden">
               <img
                 src={profile?.avatar_url || `https://ui-avatars.com/api/?name=${profile?.username || 'User'}&background=ef4444&color=fff&size=64`}
@@ -94,16 +97,19 @@ export default function ProfileStatsWidget() {
             <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-[#111] flex items-center justify-center">
               <div className="w-2 h-2 bg-white rounded-full" />
             </div>
-          </div>
+          </button>
 
-          <div className="flex-1 min-w-0">
+          <button
+            onClick={handleViewProfile}
+            className="flex-1 min-w-0 text-left cursor-pointer"
+          >
             <h3 className="text-white font-black text-lg truncate group-hover:text-streetiz-red transition-colors">
               {profile?.display_name || profile?.username || 'Mon Profil'}
             </h3>
             <p className="text-[#666] text-sm truncate">
               @{profile?.username || 'username'}
             </p>
-          </div>
+          </button>
         </div>
 
         <div className="mt-4 grid grid-cols-3 gap-3">
