@@ -14,7 +14,6 @@ import UserAgenda from '../components/UserAgenda';
 import LibreTonightButton from '../components/LibreTonightButton';
 import LibreTonightBadge from '../components/LibreTonightBadge';
 import ProfilePhotoGrid from '../components/ProfilePhotoGrid';
-import ProfileVideoCarousel from '../components/ProfileVideoCarousel';
 import ProfileMusicPlaylist from '../components/ProfileMusicPlaylist';
 
 interface ProfilePageProps {
@@ -696,8 +695,6 @@ export default function ProfilePage({ profileId: propProfileId, onClose, onOpenC
                       <UserAgenda userId={profile.id} isOwnProfile={isOwnProfile} />
                     </div>
                   </div>
-
-                  <ProfileVideoCarousel userId={profile.id} isOwnProfile={isOwnProfile} />
 
                   <div className="bg-zinc-900 rounded-lg p-6">
                     <h3 className="text-lg font-semibold text-white mb-4">About</h3>
