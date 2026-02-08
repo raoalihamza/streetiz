@@ -8,7 +8,7 @@ interface NewMember {
   display_name: string | null;
   avatar_url: string | null;
   location?: string;
-  profile_type?: string;
+  profile_role?: string;
   music_styles?: string[];
   created_at: string;
 }
@@ -38,7 +38,7 @@ export default function NewMembersCarousel({ onViewProfile }: NewMembersCarousel
           created_at,
           profile_extensions (
             location,
-            profile_type,
+            profile_role,
             music_styles
           )
         `)
@@ -53,7 +53,7 @@ export default function NewMembersCarousel({ onViewProfile }: NewMembersCarousel
         display_name: member.display_name,
         avatar_url: member.avatar_url,
         location: member.profile_extensions?.[0]?.location,
-        profile_type: member.profile_extensions?.[0]?.profile_type,
+        profile_role: member.profile_extensions?.[0]?.profile_role,
         music_styles: member.profile_extensions?.[0]?.music_styles || [],
         created_at: member.created_at
       }));
@@ -156,8 +156,8 @@ export default function NewMembersCarousel({ onViewProfile }: NewMembersCarousel
                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
               />
               <div className="absolute top-2 right-2">
-                <span className={`text-[10px] font-bold px-2 py-1 rounded-full border ${getCategoryColor(member.profile_type)}`}>
-                  {getCategoryLabel(member.profile_type)}
+                <span className={`text-[10px] font-bold px-2 py-1 rounded-full border ${getCategoryColor(member.profile_role)}`}>
+                  {getCategoryLabel(member.profile_role)}
                 </span>
               </div>
             </div>
