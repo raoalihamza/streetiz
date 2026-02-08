@@ -29,19 +29,19 @@ export default function ProfileHeader({
 
   return (
     <div className="relative">
-      <div className="relative h-48 overflow-hidden">
+      <div className="relative h-56 overflow-hidden rounded-t-3xl">
         <img
           src={bannerUrl}
           alt="Profile banner"
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/50 to-[#111]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/40 to-[#111]" />
       </div>
 
       <div className="px-8 pb-6">
         <div className="relative -mt-20 mb-4">
           <div className="relative inline-block">
-            <div className="w-32 h-32 rounded-2xl overflow-hidden border-4 border-[#111] bg-[#111]">
+            <div className="w-32 h-32 rounded-2xl overflow-hidden border-4 border-[#111] bg-[#111] shadow-xl">
               <img
                 src={avatarUrl}
                 alt={profile.display_name || profile.username}
@@ -49,10 +49,10 @@ export default function ProfileHeader({
               />
             </div>
             {profile.online_status === 'online' && (
-              <div className="absolute bottom-2 right-2 w-5 h-5 bg-green-500 border-4 border-[#111] rounded-full" />
+              <div className="absolute bottom-2 right-2 w-5 h-5 bg-green-500 border-4 border-[#111] rounded-full shadow-lg" />
             )}
             {profile.is_verified && (
-              <div className="absolute top-2 right-2 w-6 h-6 bg-blue-500 border-2 border-[#111] rounded-full flex items-center justify-center">
+              <div className="absolute top-2 right-2 w-6 h-6 bg-blue-500 border-2 border-[#111] rounded-full flex items-center justify-center shadow-lg">
                 <CheckCircle className="w-4 h-4 text-white" />
               </div>
             )}

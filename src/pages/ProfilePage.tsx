@@ -361,8 +361,12 @@ export default function ProfilePage({ profileId: propProfileId, onClose, onOpenC
         <div className={`max-w-5xl mx-auto ${isModalMode ? 'p-6' : 'px-4 pt-6 pb-12'}`}>
           <div className={`bg-[#0a0a0a] ${isModalMode ? 'rounded-3xl' : 'rounded-2xl'} border border-[#222] overflow-hidden`}>
             <div
-              className="h-64 bg-gradient-to-br from-streetiz-red/20 to-[#111] relative"
-              style={profile.banner_url ? { backgroundImage: `url(${profile.banner_url})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+              className="h-64 bg-gradient-to-br from-streetiz-red/20 to-[#0a0a0a] relative"
+              style={profile.banner_url ? {
+                backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.3), rgba(10,10,10,0.95)), url(${profile.banner_url})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center'
+              } : {}}
             />
 
             <div className="px-8 pb-8">
@@ -371,7 +375,7 @@ export default function ProfilePage({ profileId: propProfileId, onClose, onOpenC
                   <img
                     src={profile.avatar_url || `https://ui-avatars.com/api/?name=${profile.username}&background=ef4444&color=fff&size=128`}
                     alt={profile.username}
-                    className="w-32 h-32 rounded-2xl border-4 border-[#0a0a0a] object-cover"
+                    className="w-32 h-32 rounded-2xl border-4 border-[#0a0a0a] object-cover shadow-xl"
                   />
                   <div className="mb-2">
                     <h1 className="text-3xl font-black text-white mb-1">
