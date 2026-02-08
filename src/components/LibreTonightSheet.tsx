@@ -75,12 +75,39 @@ export default function LibreTonightSheet({ onClose, onUpdate }: LibreTonightShe
 
     setSaving(true);
     try {
-      const ltnLocation = {
+      let locationText = '';
+      let ltnLocation = {
         use_gps: useGPS,
         city: city.trim(),
         area: area.trim(),
         address: address.trim()
       };
+
+      if (useGPS) {
+        if (navigator.geolocation) {
+          try {
+            const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+              navigator.geolocation.getCurrentPosition(resolve, reject);
+            });
+
+            ltnLocation = {
+              ...ltnLocation,
+              city: 'Position GPS',
+              lat: position.coords.latitude,
+              lng: position.coords.longitude
+            } as any;
+            locationText = 'Ma position actuelle';
+          } catch (geoError) {
+            console.log('Geolocation error:', geoError);
+            locationText = 'Localisation GPS activée';
+          }
+        } else {
+          locationText = 'Localisation GPS activée';
+        }
+      } else {
+        const parts = [city.trim(), area.trim()].filter(Boolean);
+        locationText = parts.length > 0 ? parts.join(', ') : '';
+      }
 
       const { error } = await supabase
         .from('profiles')
@@ -89,14 +116,17 @@ export default function LibreTonightSheet({ onClose, onUpdate }: LibreTonightShe
           ltn_preferences: selectedPreferences,
           ltn_location: ltnLocation,
           out_now: freeTonight,
-          out_location: city.trim() || null
+          out_location: locationText || null
         })
         .eq('id', user.id);
 
       if (error) throw error;
 
-      onUpdate?.();
-      onClose();
+      if (onUpdate) {
+        onUpdate();
+      } else {
+        onClose();
+      }
     } catch (error) {
       console.error('Error saving LTN settings:', error);
       alert('Erreur lors de la sauvegarde');
@@ -107,7 +137,7 @@ export default function LibreTonightSheet({ onClose, onUpdate }: LibreTonightShe
 
   return (
     <div
-      className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center"
+      className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[60] flex items-end sm:items-center justify-center"
       onClick={onClose}
     >
       <div
