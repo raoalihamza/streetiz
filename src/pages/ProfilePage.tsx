@@ -15,6 +15,10 @@ import LibreTonightButton from '../components/LibreTonightButton';
 import LibreTonightBadge from '../components/LibreTonightBadge';
 import ProfilePhotoGrid from '../components/ProfilePhotoGrid';
 import ProfileMusicPlaylist from '../components/ProfileMusicPlaylist';
+import ProfileOptionsMenu from '../components/ProfileOptionsMenu';
+import SendPrivateAlbumModal from '../components/SendPrivateAlbumModal';
+import SendPortfolioModal from '../components/SendPortfolioModal';
+import ReportUserModal from '../components/ReportUserModal';
 
 interface ProfilePageProps {
   profileId?: string;
@@ -95,6 +99,10 @@ export default function ProfilePage({ profileId: propProfileId, onClose, onOpenC
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [playingVideo, setPlayingVideo] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showPrivateAlbumModal, setShowPrivateAlbumModal] = useState(false);
+  const [showPortfolioModal, setShowPortfolioModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [isBlocked, setIsBlocked] = useState(false);
   const [upcomingEvents, setUpcomingEvents] = useState<Array<{
     id: string;
     title: string;
@@ -119,6 +127,7 @@ export default function ProfilePage({ profileId: propProfileId, onClose, onOpenC
     if (profile?.id && user) {
       checkFollowStatus();
       checkFriendshipStatus();
+      checkBlockStatus();
     }
   }, [profile?.id, user]);
 
@@ -256,6 +265,76 @@ export default function ProfilePage({ profileId: propProfileId, onClose, onOpenC
       }
     } catch (error) {
       console.error('Error checking friendship:', error);
+    }
+  };
+
+  const checkBlockStatus = async () => {
+    if (!user || !profile?.id) return;
+    try {
+      const { data } = await supabase
+        .from('user_blocks')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('blocked_user_id', profile.id)
+        .maybeSingle();
+
+      setIsBlocked(!!data);
+    } catch (error) {
+      console.error('Error checking block status:', error);
+    }
+  };
+
+  const handleAddContact = async () => {
+    if (!user || !profile?.id || friendshipStatus !== 'none') return;
+    try {
+      await supabase
+        .from('friendships')
+        .insert({
+          user_id: user.id,
+          friend_id: profile.id,
+          status: 'pending'
+        });
+      setFriendshipStatus('pending');
+    } catch (error) {
+      console.error('Error adding contact:', error);
+    }
+  };
+
+  const handleShareProfile = () => {
+    const profileUrl = `${window.location.origin}/@${profile?.username}`;
+    if (navigator.share) {
+      navigator.share({
+        title: `Profil de ${profile?.display_name || profile?.username}`,
+        url: profileUrl
+      }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(profileUrl);
+      alert('Lien copié dans le presse-papier');
+    }
+  };
+
+  const handleBlock = async () => {
+    if (!user || !profile?.id) return;
+
+    try {
+      if (isBlocked) {
+        await supabase
+          .from('user_blocks')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('blocked_user_id', profile.id);
+        setIsBlocked(false);
+      } else {
+        await supabase
+          .from('user_blocks')
+          .insert({
+            user_id: user.id,
+            blocked_user_id: profile.id
+          });
+        setIsBlocked(true);
+      }
+    } catch (error) {
+      console.error('Error toggling block:', error);
     }
   };
 
@@ -492,6 +571,18 @@ export default function ProfilePage({ profileId: propProfileId, onClose, onOpenC
                         <MessageCircle className="w-4 h-4" />
                         Message
                       </button>
+
+                      <ProfileOptionsMenu
+                        targetUserId={profile.id}
+                        targetUsername={profile.username}
+                        isBlocked={isBlocked}
+                        onAddContact={handleAddContact}
+                        onShareProfile={handleShareProfile}
+                        onSendPrivateAlbum={() => setShowPrivateAlbumModal(true)}
+                        onSendPortfolio={() => setShowPortfolioModal(true)}
+                        onBlock={handleBlock}
+                        onReport={() => setShowReportModal(true)}
+                      />
                     </>
                   )}
                 </div>
@@ -851,6 +942,42 @@ export default function ProfilePage({ profileId: propProfileId, onClose, onOpenC
               loadProfile();
             }
             loadMedia();
+          }}
+        />
+      )}
+
+      {showPrivateAlbumModal && profile && (
+        <SendPrivateAlbumModal
+          targetUserId={profile.id}
+          targetUsername={profile.username}
+          onClose={() => setShowPrivateAlbumModal(false)}
+          onSent={() => {
+            alert('Album privé envoyé avec succès');
+            setShowPrivateAlbumModal(false);
+          }}
+        />
+      )}
+
+      {showPortfolioModal && profile && (
+        <SendPortfolioModal
+          targetUserId={profile.id}
+          targetUsername={profile.username}
+          onClose={() => setShowPortfolioModal(false)}
+          onSent={() => {
+            alert('Portfolio envoyé avec succès');
+            setShowPortfolioModal(false);
+          }}
+        />
+      )}
+
+      {showReportModal && profile && (
+        <ReportUserModal
+          targetUserId={profile.id}
+          targetUsername={profile.username}
+          onClose={() => setShowReportModal(false)}
+          onReported={() => {
+            alert('Signalement envoyé. Notre équipe va examiner ce profil.');
+            setShowReportModal(false);
           }}
         />
       )}

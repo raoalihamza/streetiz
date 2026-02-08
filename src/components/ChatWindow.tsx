@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, Send, Minimize2, Maximize2, Image as ImageIcon } from 'lucide-react';
+import { X, Send, Minimize2, Maximize2, Image as ImageIcon, Lock, Folder } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import MediaAccessSheet from './MediaAccessSheet';
+import SendPrivateAlbumModal from './SendPrivateAlbumModal';
+import SendPortfolioModal from './SendPortfolioModal';
 
 interface ChatWindowProps {
   recipientId: string;
@@ -28,6 +30,8 @@ export default function ChatWindow({ recipientId, recipientName, recipientAvatar
   const [loading, setLoading] = useState(false);
   const [minimized, setMinimized] = useState(false);
   const [showMediaAccessSheet, setShowMediaAccessSheet] = useState(false);
+  const [showPrivateAlbumModal, setShowPrivateAlbumModal] = useState(false);
+  const [showPortfolioModal, setShowPortfolioModal] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -141,6 +145,20 @@ export default function ChatWindow({ recipientId, recipientName, recipientAvatar
           >
             <ImageIcon className="w-4 h-4 text-[#888] hover:text-streetiz-red" />
           </button>
+          <button
+            onClick={() => setShowPrivateAlbumModal(true)}
+            className="w-8 h-8 rounded-lg hover:bg-purple-500/10 hover:border-purple-500 flex items-center justify-center transition-colors border border-transparent"
+            title="Album privé"
+          >
+            <Lock className="w-4 h-4 text-[#888] hover:text-purple-400" />
+          </button>
+          <button
+            onClick={() => setShowPortfolioModal(true)}
+            className="w-8 h-8 rounded-lg hover:bg-green-500/10 hover:border-green-500 flex items-center justify-center transition-colors border border-transparent"
+            title="Portfolio"
+          >
+            <Folder className="w-4 h-4 text-[#888] hover:text-green-400" />
+          </button>
           {!isFullScreen && (
             <button
               onClick={() => setMinimized(!minimized)}
@@ -237,6 +255,30 @@ export default function ChatWindow({ recipientId, recipientName, recipientAvatar
           targetUserId={recipientId}
           targetUsername={recipientName}
           onClose={() => setShowMediaAccessSheet(false)}
+        />
+      )}
+
+      {showPrivateAlbumModal && (
+        <SendPrivateAlbumModal
+          targetUserId={recipientId}
+          targetUsername={recipientName}
+          onClose={() => setShowPrivateAlbumModal(false)}
+          onSent={() => {
+            alert('Album privé envoyé avec succès');
+            setShowPrivateAlbumModal(false);
+          }}
+        />
+      )}
+
+      {showPortfolioModal && (
+        <SendPortfolioModal
+          targetUserId={recipientId}
+          targetUsername={recipientName}
+          onClose={() => setShowPortfolioModal(false)}
+          onSent={() => {
+            alert('Portfolio envoyé avec succès');
+            setShowPortfolioModal(false);
+          }}
         />
       )}
     </div>
