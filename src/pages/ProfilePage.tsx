@@ -677,35 +677,37 @@ export default function ProfilePage({ profileId: propProfileId, onClose, onOpenC
                 </div>
               </div>
 
+              <div className="mb-6">
+                <ProfileMusicPlaylist userId={profile.id} isOwnProfile={isOwnProfile} />
+              </div>
+
               {activeTab === 'about' && (
                 <div className="space-y-6">
-                  <ProfilePhotoGrid userId={profile.id} isOwnProfile={isOwnProfile} />
-
-                  <ProfileVideoCarousel userId={profile.id} isOwnProfile={isOwnProfile} />
-
-                  <ProfileMusicPlaylist userId={profile.id} isOwnProfile={isOwnProfile} />
-
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div className="bg-zinc-900 rounded-lg p-6">
-                      <h3 className="text-lg font-semibold text-white mb-4">About</h3>
-                      <p className="text-zinc-400">
-                        {profile.bio || 'No bio provided yet.'}
-                      </p>
-
-                      <div className="mt-6 pt-6 border-t border-zinc-800">
-                        <h4 className="text-white font-semibold mb-3">Member Since</h4>
-                        <p className="text-zinc-400">
-                          {new Date(profile.created_at).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                          })}
-                        </p>
-                      </div>
-                    </div>
+                    <ProfilePhotoGrid userId={profile.id} isOwnProfile={isOwnProfile} />
 
                     <div>
                       <UserAgenda userId={profile.id} isOwnProfile={isOwnProfile} />
+                    </div>
+                  </div>
+
+                  <ProfileVideoCarousel userId={profile.id} isOwnProfile={isOwnProfile} />
+
+                  <div className="bg-zinc-900 rounded-lg p-6">
+                    <h3 className="text-lg font-semibold text-white mb-4">About</h3>
+                    <p className="text-zinc-400">
+                      {profile.bio || 'No bio provided yet.'}
+                    </p>
+
+                    <div className="mt-6 pt-6 border-t border-zinc-800">
+                      <h4 className="text-white font-semibold mb-3">Member Since</h4>
+                      <p className="text-zinc-400">
+                        {new Date(profile.created_at).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </p>
                     </div>
                   </div>
                 </div>
