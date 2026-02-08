@@ -16,6 +16,8 @@ interface ProfileData {
   country: string | null;
   nationality: string | null;
   team_collective: string | null;
+  avatar_url: string | null;
+  banner_url: string | null;
   roles: string[];
   styles: string[];
   social_links: {
@@ -63,6 +65,8 @@ export default function ProfileEditModal({ onClose, onSave }: ProfileEditModalPr
     country: '',
     nationality: '',
     team_collective: '',
+    avatar_url: '',
+    banner_url: '',
     roles: [],
     styles: [],
     social_links: {}
@@ -72,6 +76,7 @@ export default function ProfileEditModal({ onClose, onSave }: ProfileEditModalPr
   const [newPhotoUrl, setNewPhotoUrl] = useState('');
   const [newVideoUrl, setNewVideoUrl] = useState('');
   const [newVideoPlatform, setNewVideoPlatform] = useState<'youtube' | 'tiktok'>('youtube');
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -100,6 +105,8 @@ export default function ProfileEditModal({ onClose, onSave }: ProfileEditModalPr
           country: data.country || '',
           nationality: data.nationality || '',
           team_collective: data.team_collective || '',
+          avatar_url: data.avatar_url || '',
+          banner_url: data.banner_url || '',
           roles: Array.isArray(data.roles) ? data.roles : [],
           styles: Array.isArray(data.styles) ? data.styles : [],
           social_links: data.social_links || {}
@@ -128,6 +135,91 @@ export default function ProfileEditModal({ onClose, onSave }: ProfileEditModalPr
       }
     } catch (error) {
       console.error('Error loading media:', error);
+    }
+  };
+
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Veuillez sélectionner une image');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Photo trop grande. Max 5MB.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string;
+      setProfileData(prev => ({ ...prev, avatar_url: dataUrl }));
+    };
+    reader.readAsDataURL(file);
+    event.target.value = '';
+  };
+
+  const handleBannerUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Veuillez sélectionner une image');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Photo trop grande. Max 5MB.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string;
+      setProfileData(prev => ({ ...prev, banner_url: dataUrl }));
+    };
+    reader.readAsDataURL(file);
+    event.target.value = '';
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0 || photos.length >= 9) return;
+
+    setUploadingPhoto(true);
+    try {
+      for (let i = 0; i < Math.min(files.length, 9 - photos.length); i++) {
+        const file = files[i];
+
+        if (!file.type.startsWith('image/')) {
+          continue;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+          alert(`Photo "${file.name}" est trop grande. Max 5MB.`);
+          continue;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const dataUrl = e.target?.result as string;
+          setPhotos(prev => [...prev, {
+            media_type: 'photo',
+            media_url: dataUrl,
+            display_order: prev.length,
+            isNew: true
+          }]);
+        };
+        reader.readAsDataURL(file);
+      }
+    } catch (error) {
+      console.error('Error uploading photo:', error);
+      alert('Erreur lors du chargement de la photo');
+    } finally {
+      setUploadingPhoto(false);
+      event.target.value = '';
     }
   };
 
@@ -193,6 +285,8 @@ export default function ProfileEditModal({ onClose, onSave }: ProfileEditModalPr
           country: profileData.country,
           nationality: profileData.nationality,
           team_collective: profileData.team_collective,
+          avatar_url: profileData.avatar_url,
+          banner_url: profileData.banner_url,
           roles: profileData.roles,
           styles: profileData.styles,
           social_links: profileData.social_links,
@@ -268,6 +362,68 @@ export default function ProfileEditModal({ onClose, onSave }: ProfileEditModalPr
           <div className="p-6 space-y-8 max-h-[70vh] overflow-y-auto">
             <div className="space-y-4">
               <h3 className="text-white font-black text-lg">Basic Information</h3>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[#888] text-sm font-semibold mb-2">Photo de Profil</label>
+                  <div className="flex items-center gap-4">
+                    <div className="w-20 h-20 rounded-full overflow-hidden bg-[#111] border-2 border-[#222] flex-shrink-0">
+                      {profileData.avatar_url ? (
+                        <img src={profileData.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-[#666]">
+                          <Upload className="w-8 h-8" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleAvatarUpload}
+                        className="hidden"
+                        id="avatar-upload"
+                      />
+                      <label
+                        htmlFor="avatar-upload"
+                        className="block w-full px-4 py-2 bg-[#222] hover:bg-[#333] text-white text-center rounded-xl font-semibold transition-colors cursor-pointer text-sm"
+                      >
+                        Changer
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[#888] text-sm font-semibold mb-2">Image de Couverture</label>
+                  <div className="flex items-center gap-4">
+                    <div className="w-32 h-20 rounded-xl overflow-hidden bg-[#111] border-2 border-[#222] flex-shrink-0">
+                      {profileData.banner_url ? (
+                        <img src={profileData.banner_url} alt="Bannière" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-[#666]">
+                          <Upload className="w-6 h-6" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleBannerUpload}
+                        className="hidden"
+                        id="banner-upload"
+                      />
+                      <label
+                        htmlFor="banner-upload"
+                        className="block w-full px-4 py-2 bg-[#222] hover:bg-[#333] text-white text-center rounded-xl font-semibold transition-colors cursor-pointer text-sm"
+                      >
+                        Changer
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
               <div>
                 <label className="block text-[#888] text-sm font-semibold mb-2">Display Name</label>
@@ -399,21 +555,57 @@ export default function ProfileEditModal({ onClose, onSave }: ProfileEditModalPr
                 ))}
               </div>
               {photos.length < 9 && (
-                <div className="flex gap-2">
-                  <input
-                    type="url"
-                    value={newPhotoUrl}
-                    onChange={(e) => setNewPhotoUrl(e.target.value)}
-                    placeholder="Photo URL (e.g., from Pexels)"
-                    className="flex-1 bg-[#111] text-white px-4 py-3 rounded-xl border border-[#222] focus:border-streetiz-red outline-none"
-                  />
-                  <button
-                    onClick={handleAddPhoto}
-                    className="px-6 py-3 bg-streetiz-red hover:bg-red-600 text-white rounded-xl font-bold transition-colors flex items-center gap-2"
-                  >
-                    <Plus className="w-5 h-5" />
-                    Add
-                  </button>
+                <div className="space-y-3">
+                  <div className="relative">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleFileUpload}
+                      disabled={uploadingPhoto}
+                      className="hidden"
+                      id="photo-upload"
+                    />
+                    <label
+                      htmlFor="photo-upload"
+                      className={`w-full px-6 py-4 bg-gradient-to-r from-streetiz-red to-red-600 hover:from-red-600 hover:to-streetiz-red text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                        uploadingPhoto ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
+                    >
+                      {uploadingPhoto ? (
+                        <>
+                          <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                          Chargement...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-5 h-5" />
+                          Upload Photos (Max 5MB chacune)
+                        </>
+                      )}
+                    </label>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 h-px bg-[#222]"></div>
+                    <span className="text-[#666] text-sm font-semibold">OU</span>
+                    <div className="flex-1 h-px bg-[#222]"></div>
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      value={newPhotoUrl}
+                      onChange={(e) => setNewPhotoUrl(e.target.value)}
+                      placeholder="URL de la photo (ex: Pexels, Unsplash)"
+                      className="flex-1 bg-[#111] text-white px-4 py-3 rounded-xl border border-[#222] focus:border-streetiz-red outline-none"
+                    />
+                    <button
+                      onClick={handleAddPhoto}
+                      className="px-6 py-3 bg-[#222] hover:bg-[#333] text-white rounded-xl font-bold transition-colors flex items-center gap-2"
+                    >
+                      <Plus className="w-5 h-5" />
+                      Add
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

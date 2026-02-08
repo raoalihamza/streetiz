@@ -9,7 +9,7 @@ interface OnlineMember {
   username: string;
   display_name: string | null;
   avatar_url: string | null;
-  profile_type?: string;
+  profile_role?: string;
   available_tonight?: boolean;
   tonight_location_value?: string;
   available_tonight_updated_at?: string;
@@ -45,7 +45,7 @@ export default function OnlineMembers({ onViewProfile, onOpenChat }: OnlineMembe
           available_tonight_updated_at,
           profile_extensions (
             online_status,
-            profile_type
+            profile_role
           )
         `)
         .limit(30);
@@ -62,7 +62,7 @@ export default function OnlineMembers({ onViewProfile, onOpenChat }: OnlineMembe
           username: member.username,
           display_name: member.display_name,
           avatar_url: member.avatar_url,
-          profile_type: member.profile_extensions?.[0]?.profile_type,
+          profile_role: member.profile_extensions?.[0]?.profile_role,
           available_tonight: member.available_tonight,
           tonight_location_value: member.tonight_location_value,
           available_tonight_updated_at: member.available_tonight_updated_at,
@@ -136,8 +136,8 @@ export default function OnlineMembers({ onViewProfile, onOpenChat }: OnlineMembe
                     className="w-10 h-10 rounded-full object-cover ring-2 ring-green-500/50"
                   />
                   <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[#111] rounded-full" />
-                  {member.profile_type && (
-                    <div className={`absolute -top-1 -left-1 w-4 h-4 ${getCategoryColor(member.profile_type)} rounded-full border-2 border-[#111]`} />
+                  {member.profile_role && (
+                    <div className={`absolute -top-1 -left-1 w-4 h-4 ${getCategoryColor(member.profile_role)} rounded-full border-2 border-[#111]`} />
                   )}
                 </button>
 
