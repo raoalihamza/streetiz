@@ -475,8 +475,8 @@ export default function ProfilePage({ profileId: propProfileId, onClose, onOpenC
                 backgroundPosition: 'center'
               } : {}}
             >
-              <div className="absolute top-4 right-4 flex items-center gap-3">
-                {isOwnProfile && (
+              <div className="absolute top-4 right-4 flex items-center gap-2.5 z-30">
+                {isOwnProfile ? (
                   <>
                     <LibreTonightButton
                       userId={profile.id}
@@ -495,25 +495,35 @@ export default function ProfilePage({ profileId: propProfileId, onClose, onOpenC
                     />
                     <button
                       onClick={() => setShowEditModal(true)}
-                      className="px-6 py-2.5 bg-gradient-to-r from-streetiz-red to-red-600 hover:from-red-600 hover:to-streetiz-red text-white rounded-full font-bold transition-all flex items-center gap-2"
+                      className="px-6 py-2.5 bg-gradient-to-r from-streetiz-red to-red-600 hover:from-red-600 hover:to-streetiz-red text-white rounded-full font-bold transition-all flex items-center gap-2 shadow-lg"
                     >
                       <Edit className="w-4 h-4" />
                       Edit Profile
                     </button>
                   </>
-                )}
-                {!isOwnProfile && user && (
-                  <ProfileOptionsMenu
-                    targetUserId={profile.id}
-                    targetUsername={profile.username}
-                    isBlocked={isBlocked}
-                    onAddContact={handleAddContact}
-                    onShareProfile={handleShareProfile}
-                    onSendPrivateAlbum={() => setShowPrivateAlbumModal(true)}
-                    onSendPortfolio={() => setShowPortfolioModal(true)}
-                    onBlock={handleBlock}
-                    onReport={() => setShowReportModal(true)}
-                  />
+                ) : (
+                  <>
+                    {profile.available_tonight && (
+                      <LibreTonightBadge
+                        locationType={profile.tonight_location_type}
+                        locationValue={profile.tonight_location_value}
+                        updatedAt={profile.available_tonight_updated_at}
+                      />
+                    )}
+                    {user && (
+                      <ProfileOptionsMenu
+                        targetUserId={profile.id}
+                        targetUsername={profile.username}
+                        isBlocked={isBlocked}
+                        onAddContact={handleAddContact}
+                        onShareProfile={handleShareProfile}
+                        onSendPrivateAlbum={() => setShowPrivateAlbumModal(true)}
+                        onSendPortfolio={() => setShowPortfolioModal(true)}
+                        onBlock={handleBlock}
+                        onReport={() => setShowReportModal(true)}
+                      />
+                    )}
+                  </>
                 )}
               </div>
             </div>
