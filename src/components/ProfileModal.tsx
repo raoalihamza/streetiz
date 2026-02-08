@@ -8,6 +8,9 @@ import ProfileMediaTab from './ProfileMediaTab';
 import ProfilePosts from './ProfilePosts';
 import ProfileAgenda from './ProfileAgenda';
 import BookingRequestModal from './BookingRequestModal';
+import SendPrivateAlbumModal from './SendPrivateAlbumModal';
+import SendPortfolioModal from './SendPortfolioModal';
+import ReportUserModal from './ReportUserModal';
 
 interface Profile {
   id: string;
@@ -49,6 +52,11 @@ export default function ProfileModal({ profile, onClose, onMessage }: ProfileMod
   const [followerCount, setFollowerCount] = useState(profile.followers_count || 0);
   const [loading, setLoading] = useState(false);
   const [showBookingModal, setShowBookingModal] = useState(false);
+  const [showPrivateAlbumModal, setShowPrivateAlbumModal] = useState(false);
+  const [showPortfolioModal, setShowPortfolioModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [isBlocked, setIsBlocked] = useState(false);
+  const [friendshipStatus, setFriendshipStatus] = useState<'none' | 'pending' | 'accepted'>('none');
 
   const isOwnProfile = user?.id === profile.id;
 
@@ -62,6 +70,8 @@ export default function ProfileModal({ profile, onClose, onMessage }: ProfileMod
 
     if (!isOwnProfile) {
       checkFollowStatus();
+      checkBlockStatus();
+      checkFriendshipStatus();
     }
 
     return () => {
@@ -124,6 +134,93 @@ export default function ProfileModal({ profile, onClose, onMessage }: ProfileMod
     }
   };
 
+  const checkBlockStatus = async () => {
+    if (!user) return;
+    try {
+      const { data } = await supabase
+        .from('user_blocks')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('blocked_user_id', profile.id)
+        .maybeSingle();
+
+      setIsBlocked(!!data);
+    } catch (error) {
+      console.error('Error checking block status:', error);
+    }
+  };
+
+  const checkFriendshipStatus = async () => {
+    if (!user) return;
+    try {
+      const { data } = await supabase
+        .from('friendships')
+        .select('status')
+        .or(`and(user_id.eq.${user.id},friend_id.eq.${profile.id}),and(user_id.eq.${profile.id},friend_id.eq.${user.id})`)
+        .maybeSingle();
+
+      if (data) {
+        setFriendshipStatus(data.status);
+      }
+    } catch (error) {
+      console.error('Error checking friendship:', error);
+    }
+  };
+
+  const handleAddContact = async () => {
+    if (!user || friendshipStatus !== 'none') return;
+    try {
+      await supabase
+        .from('friendships')
+        .insert({
+          user_id: user.id,
+          friend_id: profile.id,
+          status: 'pending'
+        });
+      setFriendshipStatus('pending');
+    } catch (error) {
+      console.error('Error adding contact:', error);
+    }
+  };
+
+  const handleShareProfile = () => {
+    const profileUrl = `${window.location.origin}/@${profile.username}`;
+    if (navigator.share) {
+      navigator.share({
+        title: `Profil de ${profile.display_name || profile.username}`,
+        url: profileUrl
+      }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(profileUrl);
+      alert('Lien copié dans le presse-papier');
+    }
+  };
+
+  const handleBlock = async () => {
+    if (!user) return;
+
+    try {
+      if (isBlocked) {
+        await supabase
+          .from('user_blocks')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('blocked_user_id', profile.id);
+        setIsBlocked(false);
+      } else {
+        await supabase
+          .from('user_blocks')
+          .insert({
+            user_id: user.id,
+            blocked_user_id: profile.id
+          });
+        setIsBlocked(true);
+      }
+    } catch (error) {
+      console.error('Error toggling block:', error);
+    }
+  };
+
   const handleMessage = () => {
     onMessage(profile.id);
     onClose();
@@ -161,6 +258,13 @@ export default function ProfileModal({ profile, onClose, onMessage }: ProfileMod
             onMessage={handleMessage}
             onBooking={profile.booking_enabled ? () => setShowBookingModal(true) : undefined}
             loading={loading}
+            onAddContact={handleAddContact}
+            onShareProfile={handleShareProfile}
+            onSendPrivateAlbum={() => setShowPrivateAlbumModal(true)}
+            onSendPortfolio={() => setShowPortfolioModal(true)}
+            onBlock={handleBlock}
+            onReport={() => setShowReportModal(true)}
+            isBlocked={isBlocked}
           />
 
           <div className="px-8 pb-8">
@@ -198,6 +302,42 @@ export default function ProfileModal({ profile, onClose, onMessage }: ProfileMod
         <BookingRequestModal
           targetUser={profile}
           onClose={() => setShowBookingModal(false)}
+        />
+      )}
+
+      {showPrivateAlbumModal && (
+        <SendPrivateAlbumModal
+          targetUserId={profile.id}
+          targetUsername={profile.username}
+          onClose={() => setShowPrivateAlbumModal(false)}
+          onSent={() => {
+            alert('Album privé envoyé avec succès');
+            setShowPrivateAlbumModal(false);
+          }}
+        />
+      )}
+
+      {showPortfolioModal && (
+        <SendPortfolioModal
+          targetUserId={profile.id}
+          targetUsername={profile.username}
+          onClose={() => setShowPortfolioModal(false)}
+          onSent={() => {
+            alert('Portfolio envoyé avec succès');
+            setShowPortfolioModal(false);
+          }}
+        />
+      )}
+
+      {showReportModal && (
+        <ReportUserModal
+          targetUserId={profile.id}
+          targetUsername={profile.username}
+          onClose={() => setShowReportModal(false)}
+          onReported={() => {
+            alert('Signalement envoyé. Notre équipe va examiner ce profil.');
+            setShowReportModal(false);
+          }}
         />
       )}
     </div>

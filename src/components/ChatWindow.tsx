@@ -137,28 +137,29 @@ export default function ChatWindow({ recipientId, recipientName, recipientAvatar
             <span className="text-xs text-green-400">En ligne</span>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <button
             onClick={() => setShowMediaAccessSheet(true)}
-            className="w-8 h-8 rounded-lg hover:bg-streetiz-red/10 hover:border-streetiz-red flex items-center justify-center transition-colors border border-transparent"
+            className="w-9 h-9 rounded-lg bg-[#1a1a1a] hover:bg-streetiz-red/20 border border-[#333] hover:border-streetiz-red flex items-center justify-center transition-all"
             title="Accès médias"
           >
-            <ImageIcon className="w-4 h-4 text-[#888] hover:text-streetiz-red" />
+            <ImageIcon className="w-4 h-4 text-[#999]" />
           </button>
           <button
             onClick={() => setShowPrivateAlbumModal(true)}
-            className="w-8 h-8 rounded-lg hover:bg-purple-500/10 hover:border-purple-500 flex items-center justify-center transition-colors border border-transparent"
+            className="w-9 h-9 rounded-lg bg-[#1a1a1a] hover:bg-purple-500/20 border border-[#333] hover:border-purple-500 flex items-center justify-center transition-all"
             title="Album privé"
           >
-            <Lock className="w-4 h-4 text-[#888] hover:text-purple-400" />
+            <Lock className="w-4 h-4 text-[#999]" />
           </button>
           <button
             onClick={() => setShowPortfolioModal(true)}
-            className="w-8 h-8 rounded-lg hover:bg-green-500/10 hover:border-green-500 flex items-center justify-center transition-colors border border-transparent"
+            className="w-9 h-9 rounded-lg bg-[#1a1a1a] hover:bg-green-500/20 border border-[#333] hover:border-green-500 flex items-center justify-center transition-all"
             title="Portfolio"
           >
-            <Folder className="w-4 h-4 text-[#888] hover:text-green-400" />
+            <Folder className="w-4 h-4 text-[#999]" />
           </button>
+          <div className="w-px h-6 bg-[#333] mx-1" />
           {!isFullScreen && (
             <button
               onClick={() => setMinimized(!minimized)}

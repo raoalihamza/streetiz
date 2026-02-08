@@ -1,4 +1,5 @@
 import { UserPlus, UserCheck, MessageCircle, Calendar, CheckCircle, MapPin } from 'lucide-react';
+import ProfileOptionsMenu from './ProfileOptionsMenu';
 
 const DEFAULT_BANNER = 'https://images.pexels.com/photos/1763075/pexels-photo-1763075.jpeg?auto=compress&cs=tinysrgb&w=1920';
 const DEFAULT_AVATAR = 'https://images.pexels.com/photos/1804913/pexels-photo-1804913.jpeg?auto=compress&cs=tinysrgb&w=400';
@@ -11,6 +12,13 @@ interface ProfileHeaderProps {
   onMessage: () => void;
   onBooking?: () => void;
   loading?: boolean;
+  onAddContact?: () => void;
+  onShareProfile?: () => void;
+  onSendPrivateAlbum?: () => void;
+  onSendPortfolio?: () => void;
+  onBlock?: () => void;
+  onReport?: () => void;
+  isBlocked?: boolean;
 }
 
 export default function ProfileHeader({
@@ -20,7 +28,14 @@ export default function ProfileHeader({
   onToggleFollow,
   onMessage,
   onBooking,
-  loading = false
+  loading = false,
+  onAddContact,
+  onShareProfile,
+  onSendPrivateAlbum,
+  onSendPortfolio,
+  onBlock,
+  onReport,
+  isBlocked = false
 }: ProfileHeaderProps) {
   const bannerUrl = profile.banner_url || DEFAULT_BANNER;
   const avatarUrl = profile.avatar_url || DEFAULT_AVATAR;
@@ -62,9 +77,26 @@ export default function ProfileHeader({
         <div className="mb-4">
           <div className="flex items-start justify-between mb-2">
             <div>
-              <h2 className="text-3xl font-black text-white mb-1">
-                {profile.display_name || profile.username}
-              </h2>
+              <div className="flex items-center gap-3">
+                <h2 className="text-3xl font-black text-white mb-1">
+                  {profile.display_name || profile.username}
+                </h2>
+                {!isOwnProfile && onAddContact && onShareProfile && onSendPrivateAlbum && onSendPortfolio && onBlock && onReport && (
+                  <div className="mb-1">
+                    <ProfileOptionsMenu
+                      targetUserId={profile.id}
+                      targetUsername={profile.username}
+                      isBlocked={isBlocked}
+                      onAddContact={onAddContact}
+                      onShareProfile={onShareProfile}
+                      onSendPrivateAlbum={onSendPrivateAlbum}
+                      onSendPortfolio={onSendPortfolio}
+                      onBlock={onBlock}
+                      onReport={onReport}
+                    />
+                  </div>
+                )}
+              </div>
               <p className="text-[#888] text-lg">@{profile.username}</p>
             </div>
           </div>
