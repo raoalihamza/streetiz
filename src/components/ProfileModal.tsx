@@ -11,6 +11,7 @@ import BookingRequestModal from './BookingRequestModal';
 import SendPrivateAlbumModal from './SendPrivateAlbumModal';
 import SendPortfolioModal from './SendPortfolioModal';
 import ReportUserModal from './ReportUserModal';
+import LibreTonightSheet from './LibreTonightSheet';
 
 interface Profile {
   id: string;
@@ -55,8 +56,10 @@ export default function ProfileModal({ profile, onClose, onMessage }: ProfileMod
   const [showPrivateAlbumModal, setShowPrivateAlbumModal] = useState(false);
   const [showPortfolioModal, setShowPortfolioModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [showLTNSheet, setShowLTNSheet] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
   const [friendshipStatus, setFriendshipStatus] = useState<'none' | 'pending' | 'accepted'>('none');
+  const [currentProfile, setCurrentProfile] = useState(profile);
 
   const isOwnProfile = user?.id === profile.id;
 
@@ -226,6 +229,24 @@ export default function ProfileModal({ profile, onClose, onMessage }: ProfileMod
     onClose();
   };
 
+  const refreshProfile = async () => {
+    if (!user) return;
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (data) {
+        setCurrentProfile(data);
+      }
+    } catch (error) {
+      console.error('Error refreshing profile:', error);
+    }
+  };
+
   const tabs = [
     { id: 'about', label: 'À propos', icon: UserIcon },
     { id: 'media', label: 'Médias', icon: ImageIcon },
@@ -251,12 +272,12 @@ export default function ProfileModal({ profile, onClose, onMessage }: ProfileMod
           </button>
 
           <ProfileHeader
-            profile={{ ...profile, followers_count: followerCount }}
+            profile={{ ...currentProfile, followers_count: followerCount }}
             isOwnProfile={isOwnProfile}
             isFollowing={isFollowing}
             onToggleFollow={toggleFollow}
             onMessage={handleMessage}
-            onBooking={profile.booking_enabled ? () => setShowBookingModal(true) : undefined}
+            onBooking={currentProfile.booking_enabled ? () => setShowBookingModal(true) : undefined}
             loading={loading}
             onAddContact={handleAddContact}
             onShareProfile={handleShareProfile}
@@ -265,6 +286,7 @@ export default function ProfileModal({ profile, onClose, onMessage }: ProfileMod
             onBlock={handleBlock}
             onReport={() => setShowReportModal(true)}
             isBlocked={isBlocked}
+            onToggleLTN={isOwnProfile ? () => setShowLTNSheet(true) : undefined}
           />
 
           <div className="px-8 pb-8">
@@ -289,10 +311,10 @@ export default function ProfileModal({ profile, onClose, onMessage }: ProfileMod
             </div>
 
             <div>
-              {activeTab === 'about' && <ProfileAbout profile={profile} />}
-              {activeTab === 'media' && <ProfileMediaTab profile={profile} isOwnProfile={isOwnProfile} />}
-              {activeTab === 'posts' && <ProfilePosts profile={profile} />}
-              {activeTab === 'agenda' && <ProfileAgenda profile={profile} isOwnProfile={isOwnProfile} />}
+              {activeTab === 'about' && <ProfileAbout profile={currentProfile} />}
+              {activeTab === 'media' && <ProfileMediaTab profile={currentProfile} isOwnProfile={isOwnProfile} />}
+              {activeTab === 'posts' && <ProfilePosts profile={currentProfile} />}
+              {activeTab === 'agenda' && <ProfileAgenda profile={currentProfile} isOwnProfile={isOwnProfile} />}
             </div>
           </div>
         </div>
@@ -337,6 +359,16 @@ export default function ProfileModal({ profile, onClose, onMessage }: ProfileMod
           onReported={() => {
             alert('Signalement envoyé. Notre équipe va examiner ce profil.');
             setShowReportModal(false);
+          }}
+        />
+      )}
+
+      {showLTNSheet && (
+        <LibreTonightSheet
+          onClose={() => setShowLTNSheet(false)}
+          onUpdate={() => {
+            refreshProfile();
+            setShowLTNSheet(false);
           }}
         />
       )}

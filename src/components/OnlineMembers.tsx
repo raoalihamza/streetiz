@@ -10,9 +10,9 @@ interface OnlineMember {
   display_name: string | null;
   avatar_url: string | null;
   profile_role?: string;
-  available_tonight?: boolean;
-  tonight_location_value?: string;
-  available_tonight_updated_at?: string;
+  free_tonight?: boolean;
+  out_location?: string;
+  ltn_preferences?: any[];
 }
 
 interface OnlineMembersProps {
@@ -40,32 +40,26 @@ export default function OnlineMembers({ onViewProfile, onOpenChat }: OnlineMembe
           username,
           display_name,
           avatar_url,
-          available_tonight,
-          tonight_location_value,
-          available_tonight_updated_at,
-          profile_extensions (
-            online_status,
-            profile_role
-          )
+          free_tonight,
+          out_location,
+          ltn_preferences,
+          online_status
         `)
+        .eq('online_status', 'online')
         .limit(30);
 
       if (error) throw error;
 
       const onlineMembers = (data || [])
-        .filter((member: any) =>
-          member.profile_extensions?.[0]?.online_status === 'online' &&
-          member.id !== user?.id
-        )
+        .filter((member: any) => member.id !== user?.id)
         .map((member: any) => ({
           id: member.id,
           username: member.username,
           display_name: member.display_name,
           avatar_url: member.avatar_url,
-          profile_role: member.profile_extensions?.[0]?.profile_role,
-          available_tonight: member.available_tonight,
-          tonight_location_value: member.tonight_location_value,
-          available_tonight_updated_at: member.available_tonight_updated_at,
+          free_tonight: member.free_tonight,
+          out_location: member.out_location,
+          ltn_preferences: member.ltn_preferences,
         }));
 
       setMembers(onlineMembers);
@@ -149,10 +143,9 @@ export default function OnlineMembers({ onViewProfile, onOpenChat }: OnlineMembe
                     {member.display_name || member.username}
                   </p>
                   <p className="text-[#666] text-xs truncate mb-1">@{member.username}</p>
-                  {member.available_tonight && (
+                  {member.free_tonight && (
                     <LibreTonightBadge
-                      locationValue={member.tonight_location_value}
-                      updatedAt={member.available_tonight_updated_at}
+                      locationValue={member.out_location}
                       size="sm"
                     />
                   )}

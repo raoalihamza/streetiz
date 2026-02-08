@@ -1,4 +1,4 @@
-import { UserPlus, UserCheck, MessageCircle, Calendar, CheckCircle, MapPin } from 'lucide-react';
+import { UserPlus, UserCheck, MessageCircle, Calendar, CheckCircle, MapPin, Zap } from 'lucide-react';
 import ProfileOptionsMenu from './ProfileOptionsMenu';
 
 const DEFAULT_BANNER = 'https://images.pexels.com/photos/1763075/pexels-photo-1763075.jpeg?auto=compress&cs=tinysrgb&w=1920';
@@ -19,6 +19,7 @@ interface ProfileHeaderProps {
   onBlock?: () => void;
   onReport?: () => void;
   isBlocked?: boolean;
+  onToggleLTN?: () => void;
 }
 
 export default function ProfileHeader({
@@ -35,7 +36,8 @@ export default function ProfileHeader({
   onSendPortfolio,
   onBlock,
   onReport,
-  isBlocked = false
+  isBlocked = false,
+  onToggleLTN
 }: ProfileHeaderProps) {
   const bannerUrl = profile.banner_url || DEFAULT_BANNER;
   const avatarUrl = profile.avatar_url || DEFAULT_AVATAR;
@@ -51,6 +53,22 @@ export default function ProfileHeader({
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/40 to-[#111]" />
+
+        {isOwnProfile && onToggleLTN && (
+          <div className="absolute top-6 right-6 flex items-center gap-2">
+            <button
+              onClick={onToggleLTN}
+              className={`px-4 py-2 rounded-full font-black text-sm flex items-center gap-2 transition-all ${
+                profile.free_tonight
+                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/50'
+                  : 'bg-black/50 hover:bg-black/70 text-white backdrop-blur-sm border border-white/20'
+              }`}
+            >
+              <Zap className={`w-4 h-4 ${profile.free_tonight ? 'animate-pulse' : ''}`} />
+              <span>LTN</span>
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="px-8 pb-6">
