@@ -367,13 +367,31 @@ export default function ProfilePage({ profileId: propProfileId, onClose, onOpenC
                 backgroundSize: 'cover',
                 backgroundPosition: 'center'
               } : {}}
-            />
+            >
+              <div className="absolute top-6 right-6 z-10">
+                <LibreTonightButton
+                  userId={profile.id}
+                  isOwnProfile={isOwnProfile}
+                  availableTonight={profile.available_tonight}
+                  tonightLocationType={profile.tonight_location_type}
+                  tonightLocationValue={profile.tonight_location_value}
+                  availableTonightUpdatedAt={profile.available_tonight_updated_at}
+                  onUpdate={() => {
+                    if (username) {
+                      loadProfileByUsername();
+                    } else if (profileId) {
+                      loadProfile();
+                    }
+                  }}
+                />
+              </div>
+            </div>
 
             <div className="px-8 pb-8">
               <div className="flex flex-col md:flex-row md:items-end md:justify-between -mt-16 mb-6">
                 <div className="flex items-end gap-6">
                   <img
-                    src={profile.avatar_url || `https://ui-avatars.com/api/?name=${profile.username}&background=ef4444&color=fff&size=128`}
+                    src={profile.avatar_url || 'https://images.pexels.com/photos/1804913/pexels-photo-1804913.jpeg?auto=compress&cs=tinysrgb&w=400'}
                     alt={profile.username}
                     className="w-32 h-32 rounded-2xl border-4 border-[#0a0a0a] object-cover shadow-xl"
                   />
@@ -393,21 +411,6 @@ export default function ProfilePage({ profileId: propProfileId, onClose, onOpenC
                 </div>
 
                 <div className="flex gap-3 mt-4 md:mt-0">
-                  <LibreTonightButton
-                    userId={profile.id}
-                    isOwnProfile={isOwnProfile}
-                    availableTonight={profile.available_tonight}
-                    tonightLocationType={profile.tonight_location_type}
-                    tonightLocationValue={profile.tonight_location_value}
-                    availableTonightUpdatedAt={profile.available_tonight_updated_at}
-                    onUpdate={() => {
-                      if (username) {
-                        loadProfileByUsername();
-                      } else if (profileId) {
-                        loadProfile();
-                      }
-                    }}
-                  />
                   {isOwnProfile ? (
                     <button
                       onClick={() => setShowEditModal(true)}
