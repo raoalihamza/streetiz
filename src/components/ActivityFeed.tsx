@@ -81,7 +81,7 @@ export default function ActivityFeed({ onViewProfile }: ActivityFeedProps) {
 
       activities.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-      setActivities(activities.slice(0, 15));
+      setActivities(activities.slice(0, 4));
     } catch (error) {
       console.error('Error loading activities:', error);
     } finally {
@@ -149,17 +149,17 @@ export default function ActivityFeed({ onViewProfile }: ActivityFeedProps) {
 
   return (
     <div className="bg-[#111] rounded-2xl border border-[#222] overflow-hidden">
-      <div className="p-4 border-b border-[#222]">
-        <h3 className="text-white font-black text-sm uppercase tracking-wider">
+      <div className="p-3 border-b border-[#222]">
+        <h3 className="text-white font-black text-xs uppercase tracking-wider">
           Activité Récente
         </h3>
       </div>
 
-      <div className="max-h-[500px] overflow-y-auto">
+      <div className="max-h-[240px] overflow-y-auto">
         {activities.length === 0 ? (
-          <div className="p-6 text-center">
-            <FileText className="w-12 h-12 text-[#333] mx-auto mb-3" />
-            <p className="text-[#666] text-sm">Aucune activité récente</p>
+          <div className="p-4 text-center">
+            <FileText className="w-8 h-8 text-[#333] mx-auto mb-2" />
+            <p className="text-[#666] text-xs">Aucune activité récente</p>
           </div>
         ) : (
           <div className="p-2">
@@ -169,26 +169,26 @@ export default function ActivityFeed({ onViewProfile }: ActivityFeedProps) {
                 <button
                   key={activity.id}
                   onClick={() => onViewProfile(activity.user_id)}
-                  className="w-full flex items-start gap-3 p-3 rounded-xl hover:bg-[#1a1a1a] transition-colors text-left group"
+                  className="w-full flex items-start gap-3 p-2.5 rounded-xl hover:bg-[#1a1a1a] transition-colors text-left group"
                 >
                   <div className="relative flex-shrink-0">
                     <img
                       src={activity.avatar_url || `https://ui-avatars.com/api/?name=${activity.username}&background=ef4444&color=fff&size=40`}
                       alt={activity.username}
-                      className="w-10 h-10 rounded-full object-cover"
+                      className="w-9 h-9 rounded-full object-cover"
                     />
                     {activity.type === 'online' && (
-                      <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[#111] rounded-full animate-pulse" />
+                      <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-[#111] rounded-full animate-pulse" />
                     )}
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    <p className="text-white text-sm font-medium mb-1 truncate">
+                    <p className="text-white text-base font-semibold mb-0.5 truncate">
                       {getActivityText(activity)}
                     </p>
                     <div className="flex items-center gap-2">
-                      <Icon className={`w-3 h-3 ${getActivityColor(activity.type)}`} />
-                      <span className="text-[#666] text-xs">
+                      <Icon className={`w-3.5 h-3.5 ${getActivityColor(activity.type)}`} />
+                      <span className="text-[#666] text-sm">
                         {getTimeAgo(activity.created_at)}
                       </span>
                     </div>

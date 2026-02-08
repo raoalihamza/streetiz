@@ -751,7 +751,7 @@ export default function CommunityPage({ onNavigate }: CommunityPageProps) {
 
 
       {openChats.map((chat, index) => (
-        <div key={chat.id} style={{ right: `${20 + index * 420}px` }} className="fixed bottom-0 z-40">
+        <div key={chat.id} style={{ right: `${20 + index * 470}px` }} className="fixed bottom-0 z-40">
           <ChatWindow
             recipientId={chat.id}
             recipientName={chat.name}

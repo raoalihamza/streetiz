@@ -124,68 +124,68 @@ export default function ChatWindow({ recipientId, recipientName, recipientAvatar
   };
 
   return (
-    <div className={isFullScreen ? "h-full flex flex-col" : "fixed bottom-4 right-4 z-50 w-96 bg-[#111] rounded-2xl border border-[#222] shadow-2xl overflow-hidden"}>
-      <div className="bg-[#0a0a0a] border-b border-[#222] p-4 flex items-center justify-between flex-shrink-0">
+    <div className={isFullScreen ? "h-full flex flex-col" : "fixed bottom-4 right-4 z-50 w-[450px] bg-[#111] rounded-2xl border border-[#222] shadow-2xl overflow-hidden"}>
+      <div className="bg-[#0a0a0a] border-b border-[#222] p-5 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-3">
           <img
-            src={recipientAvatar || `https://ui-avatars.com/api/?name=${recipientName}&background=ef4444&color=fff&size=40`}
+            src={recipientAvatar || `https://ui-avatars.com/api/?name=${recipientName}&background=ef4444&color=fff&size=48`}
             alt={recipientName}
-            className="w-10 h-10 rounded-full object-cover"
+            className="w-12 h-12 rounded-full object-cover"
           />
           <div>
-            <h3 className="text-white font-bold text-sm">{recipientName}</h3>
-            <span className="text-xs text-green-400">En ligne</span>
+            <h3 className="text-white font-bold text-lg">{recipientName}</h3>
+            <span className="text-sm text-green-400">En ligne</span>
           </div>
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           <button
             onClick={() => setShowMediaAccessSheet(true)}
-            className="w-9 h-9 rounded-lg bg-[#1a1a1a] hover:bg-streetiz-red/20 border border-[#333] hover:border-streetiz-red flex items-center justify-center transition-all"
+            className="w-10 h-10 rounded-lg bg-[#1a1a1a] hover:bg-streetiz-red/20 border border-[#333] hover:border-streetiz-red flex items-center justify-center transition-all"
             title="Accès médias"
           >
-            <ImageIcon className="w-4 h-4 text-[#999]" />
+            <ImageIcon className="w-5 h-5 text-[#999]" />
           </button>
           <button
             onClick={() => setShowPrivateAlbumModal(true)}
-            className="w-9 h-9 rounded-lg bg-[#1a1a1a] hover:bg-purple-500/20 border border-[#333] hover:border-purple-500 flex items-center justify-center transition-all"
+            className="w-10 h-10 rounded-lg bg-[#1a1a1a] hover:bg-purple-500/20 border border-[#333] hover:border-purple-500 flex items-center justify-center transition-all"
             title="Album privé"
           >
-            <Lock className="w-4 h-4 text-[#999]" />
+            <Lock className="w-5 h-5 text-[#999]" />
           </button>
           <button
             onClick={() => setShowPortfolioModal(true)}
-            className="w-9 h-9 rounded-lg bg-[#1a1a1a] hover:bg-green-500/20 border border-[#333] hover:border-green-500 flex items-center justify-center transition-all"
+            className="w-10 h-10 rounded-lg bg-[#1a1a1a] hover:bg-green-500/20 border border-[#333] hover:border-green-500 flex items-center justify-center transition-all"
             title="Portfolio"
           >
-            <Folder className="w-4 h-4 text-[#999]" />
+            <Folder className="w-5 h-5 text-[#999]" />
           </button>
-          <div className="w-px h-6 bg-[#333] mx-1" />
+          <div className="w-px h-7 bg-[#333] mx-1" />
           {!isFullScreen && (
             <button
               onClick={() => setMinimized(!minimized)}
-              className="w-8 h-8 rounded-lg hover:bg-[#1a1a1a] flex items-center justify-center transition-colors"
+              className="w-10 h-10 rounded-lg hover:bg-[#1a1a1a] flex items-center justify-center transition-colors"
             >
               {minimized ? (
-                <Maximize2 className="w-4 h-4 text-[#888]" />
+                <Maximize2 className="w-5 h-5 text-[#888]" />
               ) : (
-                <Minimize2 className="w-4 h-4 text-[#888]" />
+                <Minimize2 className="w-5 h-5 text-[#888]" />
               )}
             </button>
           )}
           {isFullScreen && (
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-lg hover:bg-[#1a1a1a] flex items-center justify-center transition-colors"
+              className="w-10 h-10 rounded-lg hover:bg-[#1a1a1a] flex items-center justify-center transition-colors"
             >
-              <X className="w-4 h-4 text-[#888]" />
+              <X className="w-5 h-5 text-[#888]" />
             </button>
           )}
           {!isFullScreen && (
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-lg hover:bg-[#1a1a1a] flex items-center justify-center transition-colors"
+              className="w-10 h-10 rounded-lg hover:bg-[#1a1a1a] flex items-center justify-center transition-colors"
             >
-              <X className="w-4 h-4 text-[#888]" />
+              <X className="w-5 h-5 text-[#888]" />
             </button>
           )}
         </div>
@@ -193,10 +193,10 @@ export default function ChatWindow({ recipientId, recipientName, recipientAvatar
 
       {(isFullScreen || !minimized) && (
         <>
-          <div className={isFullScreen ? "flex-1 overflow-y-auto p-4 space-y-3" : "h-96 overflow-y-auto p-4 space-y-3"}>
+          <div className={isFullScreen ? "flex-1 overflow-y-auto p-5 space-y-4" : "h-[480px] overflow-y-auto p-5 space-y-4"}>
             {messages.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-[#666] text-sm">Aucun message. Dites bonjour!</p>
+              <div className="text-center py-16">
+                <p className="text-[#666] text-base">Aucun message. Dites bonjour!</p>
               </div>
             ) : (
               messages.map((message) => {
@@ -204,14 +204,14 @@ export default function ChatWindow({ recipientId, recipientName, recipientAvatar
                 return (
                   <div key={message.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
                     <div
-                      className={`max-w-[75%] px-4 py-2 rounded-2xl ${
+                      className={`max-w-[75%] px-5 py-3 rounded-2xl ${
                         isOwn
                           ? 'bg-streetiz-red text-white rounded-br-none'
                           : 'bg-[#1a1a1a] text-white rounded-bl-none'
                       }`}
                     >
-                      <p className="text-sm">{message.content}</p>
-                      <span className="text-xs opacity-60 mt-1 block">
+                      <p className="text-base leading-relaxed">{message.content}</p>
+                      <span className="text-xs opacity-60 mt-2 block">
                         {new Date(message.created_at).toLocaleTimeString('fr-FR', {
                           hour: '2-digit',
                           minute: '2-digit'
@@ -225,25 +225,25 @@ export default function ChatWindow({ recipientId, recipientName, recipientAvatar
             <div ref={messagesEndRef} />
           </div>
 
-          <form onSubmit={handleSendMessage} className={`border-t border-[#222] p-4 ${isFullScreen ? 'flex-shrink-0' : ''}`}>
-            <div className="flex items-center gap-2">
+          <form onSubmit={handleSendMessage} className={`border-t border-[#222] p-5 ${isFullScreen ? 'flex-shrink-0' : ''}`}>
+            <div className="flex items-center gap-3">
               <input
                 type="text"
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 placeholder="Écrivez un message..."
-                className="flex-1 bg-[#1a1a1a] border border-[#333] rounded-full px-4 py-2 text-white text-sm placeholder-[#666] focus:outline-none focus:border-streetiz-red"
+                className="flex-1 bg-[#1a1a1a] border border-[#333] rounded-full px-5 py-3 text-white text-base placeholder-[#666] focus:outline-none focus:border-streetiz-red"
                 disabled={loading}
               />
               <button
                 type="submit"
                 disabled={!newMessage.trim() || loading}
-                className="w-10 h-10 bg-streetiz-red hover:bg-red-600 disabled:bg-[#333] disabled:cursor-not-allowed rounded-full flex items-center justify-center transition-colors"
+                className="w-12 h-12 bg-streetiz-red hover:bg-red-600 disabled:bg-[#333] disabled:cursor-not-allowed rounded-full flex items-center justify-center transition-colors"
               >
                 {loading ? (
-                  <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                  <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
                 ) : (
-                  <Send className="w-4 h-4 text-white" />
+                  <Send className="w-5 h-5 text-white" />
                 )}
               </button>
             </div>
