@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { MessageCircle, Users as UsersIcon } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import AvailabilityBadge from './AvailabilityBadge';
+import LibreTonightBadge from './LibreTonightBadge';
 
 interface OnlineMember {
   id: string;
@@ -10,9 +10,9 @@ interface OnlineMember {
   display_name: string | null;
   avatar_url: string | null;
   profile_type?: string;
-  free_tonight?: boolean;
-  out_now?: boolean;
-  out_location?: string;
+  available_tonight?: boolean;
+  tonight_location_value?: string;
+  available_tonight_updated_at?: string;
 }
 
 interface OnlineMembersProps {
@@ -40,9 +40,9 @@ export default function OnlineMembers({ onViewProfile, onOpenChat }: OnlineMembe
           username,
           display_name,
           avatar_url,
-          free_tonight,
-          out_now,
-          out_location,
+          available_tonight,
+          tonight_location_value,
+          available_tonight_updated_at,
           profile_extensions (
             online_status,
             profile_type
@@ -63,9 +63,9 @@ export default function OnlineMembers({ onViewProfile, onOpenChat }: OnlineMembe
           display_name: member.display_name,
           avatar_url: member.avatar_url,
           profile_type: member.profile_extensions?.[0]?.profile_type,
-          free_tonight: member.free_tonight,
-          out_now: member.out_now,
-          out_location: member.out_location,
+          available_tonight: member.available_tonight,
+          tonight_location_value: member.tonight_location_value,
+          available_tonight_updated_at: member.available_tonight_updated_at,
         }));
 
       setMembers(onlineMembers);
@@ -149,12 +149,13 @@ export default function OnlineMembers({ onViewProfile, onOpenChat }: OnlineMembe
                     {member.display_name || member.username}
                   </p>
                   <p className="text-[#666] text-xs truncate mb-1">@{member.username}</p>
-                  <AvailabilityBadge
-                    freeTonight={member.free_tonight}
-                    outNow={member.out_now}
-                    outLocation={member.out_location}
-                    size="sm"
-                  />
+                  {member.available_tonight && (
+                    <LibreTonightBadge
+                      locationValue={member.tonight_location_value}
+                      updatedAt={member.available_tonight_updated_at}
+                      size="sm"
+                    />
+                  )}
                 </button>
 
                 {user && (

@@ -11,6 +11,8 @@ import FeedPost from '../components/FeedPost';
 import Navigation from '../components/Navigation';
 import ProfileEditModal from '../components/ProfileEditModal';
 import UserAgenda from '../components/UserAgenda';
+import LibreTonightButton from '../components/LibreTonightButton';
+import LibreTonightBadge from '../components/LibreTonightBadge';
 
 interface ProfilePageProps {
   profileId?: string;
@@ -40,6 +42,10 @@ interface Profile {
     other?: string;
   };
   created_at: string;
+  available_tonight?: boolean;
+  tonight_location_type?: string;
+  tonight_location_value?: string;
+  available_tonight_updated_at?: string;
 }
 
 interface Media {
@@ -371,11 +377,33 @@ export default function ProfilePage({ profileId: propProfileId, onClose, onOpenC
                     <h1 className="text-3xl font-black text-white mb-1">
                       {profile.display_name || profile.username}
                     </h1>
-                    <p className="text-[#888]">@{profile.username}</p>
+                    <p className="text-[#888] mb-2">@{profile.username}</p>
+                    {!isOwnProfile && profile.available_tonight && (
+                      <LibreTonightBadge
+                        locationValue={profile.tonight_location_value}
+                        updatedAt={profile.available_tonight_updated_at}
+                        size="sm"
+                      />
+                    )}
                   </div>
                 </div>
 
                 <div className="flex gap-3 mt-4 md:mt-0">
+                  <LibreTonightButton
+                    userId={profile.id}
+                    isOwnProfile={isOwnProfile}
+                    availableTonight={profile.available_tonight}
+                    tonightLocationType={profile.tonight_location_type}
+                    tonightLocationValue={profile.tonight_location_value}
+                    availableTonightUpdatedAt={profile.available_tonight_updated_at}
+                    onUpdate={() => {
+                      if (username) {
+                        loadProfileByUsername();
+                      } else if (profileId) {
+                        loadProfile();
+                      }
+                    }}
+                  />
                   {isOwnProfile ? (
                     <button
                       onClick={() => setShowEditModal(true)}
