@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { MessageCircle, Users as UsersIcon } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import AvailabilityBadge from './AvailabilityBadge';
 
 interface OnlineMember {
   id: string;
@@ -9,6 +10,9 @@ interface OnlineMember {
   display_name: string | null;
   avatar_url: string | null;
   profile_type?: string;
+  free_tonight?: boolean;
+  out_now?: boolean;
+  out_location?: string;
 }
 
 interface OnlineMembersProps {
@@ -36,6 +40,9 @@ export default function OnlineMembers({ onViewProfile, onOpenChat }: OnlineMembe
           username,
           display_name,
           avatar_url,
+          free_tonight,
+          out_now,
+          out_location,
           profile_extensions (
             online_status,
             profile_type
@@ -56,6 +63,9 @@ export default function OnlineMembers({ onViewProfile, onOpenChat }: OnlineMembe
           display_name: member.display_name,
           avatar_url: member.avatar_url,
           profile_type: member.profile_extensions?.[0]?.profile_type,
+          free_tonight: member.free_tonight,
+          out_now: member.out_now,
+          out_location: member.out_location,
         }));
 
       setMembers(onlineMembers);
@@ -138,7 +148,13 @@ export default function OnlineMembers({ onViewProfile, onOpenChat }: OnlineMembe
                   <p className="text-white text-sm font-semibold truncate">
                     {member.display_name || member.username}
                   </p>
-                  <p className="text-[#666] text-xs truncate">@{member.username}</p>
+                  <p className="text-[#666] text-xs truncate mb-1">@{member.username}</p>
+                  <AvailabilityBadge
+                    freeTonight={member.free_tonight}
+                    outNow={member.out_now}
+                    outLocation={member.out_location}
+                    size="sm"
+                  />
                 </button>
 
                 {user && (

@@ -10,6 +10,7 @@ import { useAuth } from '../contexts/AuthContext';
 import FeedPost from '../components/FeedPost';
 import Navigation from '../components/Navigation';
 import ProfileEditModal from '../components/ProfileEditModal';
+import UserAgenda from '../components/UserAgenda';
 
 interface ProfilePageProps {
   profileId?: string;
@@ -69,7 +70,7 @@ interface Post {
   profiles: { id: string; username: string; display_name: string | null; avatar_url: string | null };
 }
 
-type TabType = 'about' | 'media' | 'posts';
+type TabType = 'about' | 'media' | 'posts' | 'agenda';
 
 export default function ProfilePage({ profileId: propProfileId, onClose, onOpenChat }: ProfilePageProps) {
   const { username } = useParams<{ username: string }>();
@@ -594,6 +595,16 @@ export default function ProfilePage({ profileId: propProfileId, onClose, onOpenC
                   >
                     Posts
                   </button>
+                  <button
+                    onClick={() => setActiveTab('agenda')}
+                    className={`pb-4 font-bold transition-colors ${
+                      activeTab === 'agenda'
+                        ? 'text-streetiz-red border-b-2 border-streetiz-red'
+                        : 'text-[#666] hover:text-white'
+                    }`}
+                  >
+                    Agenda
+                  </button>
                 </div>
               </div>
 
@@ -697,6 +708,13 @@ export default function ProfilePage({ profileId: propProfileId, onClose, onOpenC
                     </div>
                   )}
                 </div>
+              )}
+
+              {activeTab === 'agenda' && profile && (
+                <UserAgenda
+                  userId={profile.id}
+                  isOwnProfile={isOwnProfile}
+                />
               )}
             </div>
           </div>
