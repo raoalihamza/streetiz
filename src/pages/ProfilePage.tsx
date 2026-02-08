@@ -79,7 +79,7 @@ interface Post {
   profiles: { id: string; username: string; display_name: string | null; avatar_url: string | null };
 }
 
-type TabType = 'about' | 'media' | 'posts' | 'agenda';
+type TabType = 'about' | 'media' | 'music' | 'posts' | 'agenda';
 
 export default function ProfilePage({ profileId: propProfileId, onClose, onOpenChat }: ProfilePageProps) {
   const { username } = useParams<{ username: string }>();
@@ -655,6 +655,16 @@ export default function ProfilePage({ profileId: propProfileId, onClose, onOpenC
                     Media ({photos.length + videos.length})
                   </button>
                   <button
+                    onClick={() => setActiveTab('music')}
+                    className={`pb-4 font-bold transition-colors ${
+                      activeTab === 'music'
+                        ? 'text-streetiz-red border-b-2 border-streetiz-red'
+                        : 'text-[#666] hover:text-white'
+                    }`}
+                  >
+                    Music
+                  </button>
+                  <button
                     onClick={() => setActiveTab('posts')}
                     className={`pb-4 font-bold transition-colors ${
                       activeTab === 'posts'
@@ -675,10 +685,6 @@ export default function ProfilePage({ profileId: propProfileId, onClose, onOpenC
                     Agenda
                   </button>
                 </div>
-              </div>
-
-              <div className="mb-6">
-                <ProfileMusicPlaylist userId={profile.id} isOwnProfile={isOwnProfile} />
               </div>
 
               {activeTab === 'about' && (
@@ -776,6 +782,12 @@ export default function ProfilePage({ profileId: propProfileId, onClose, onOpenC
                       <p className="text-[#666]">No media uploaded yet</p>
                     </div>
                   )}
+                </div>
+              )}
+
+              {activeTab === 'music' && (
+                <div>
+                  <ProfileMusicPlaylist userId={profile.id} isOwnProfile={isOwnProfile} />
                 </div>
               )}
 

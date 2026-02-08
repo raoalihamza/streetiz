@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Upload, Link as LinkIcon, Trash2, Plus, Save } from 'lucide-react';
+import { X, Upload, Link as LinkIcon, Trash2, Plus, Save, Music } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -28,6 +28,8 @@ interface ProfileData {
     spotify?: string;
     other?: string;
   };
+  music_url: string | null;
+  music_type: string;
 }
 
 interface MediaItem {
@@ -69,7 +71,9 @@ export default function ProfileEditModal({ onClose, onSave }: ProfileEditModalPr
     banner_url: '',
     roles: [],
     styles: [],
-    social_links: {}
+    social_links: {},
+    music_url: '',
+    music_type: 'Playlist'
   });
   const [photos, setPhotos] = useState<MediaItem[]>([]);
   const [videos, setVideos] = useState<MediaItem[]>([]);
@@ -109,7 +113,9 @@ export default function ProfileEditModal({ onClose, onSave }: ProfileEditModalPr
           banner_url: data.banner_url || '',
           roles: Array.isArray(data.roles) ? data.roles : [],
           styles: Array.isArray(data.styles) ? data.styles : [],
-          social_links: data.social_links || {}
+          social_links: data.social_links || {},
+          music_url: data.music_url || '',
+          music_type: data.music_type || 'Playlist'
         });
       }
     } catch (error) {
@@ -290,6 +296,8 @@ export default function ProfileEditModal({ onClose, onSave }: ProfileEditModalPr
           roles: profileData.roles,
           styles: profileData.styles,
           social_links: profileData.social_links,
+          music_url: profileData.music_url || null,
+          music_type: profileData.music_type,
           updated_at: new Date().toISOString()
         })
         .eq('id', user.id);
@@ -729,6 +737,46 @@ export default function ProfileEditModal({ onClose, onSave }: ProfileEditModalPr
                   placeholder="Other Website URL"
                   className="w-full bg-[#111] text-white px-4 py-3 rounded-xl border border-[#222] focus:border-streetiz-red outline-none"
                 />
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-white font-black text-lg flex items-center gap-2">
+                <Music className="w-5 h-5 text-streetiz-red" />
+                Music / Playlist du moment
+              </h3>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-[#888] text-sm font-semibold mb-2">
+                    Lien Spotify / Deezer / SoundCloud
+                  </label>
+                  <input
+                    type="url"
+                    value={profileData.music_url || ''}
+                    onChange={(e) => setProfileData({ ...profileData, music_url: e.target.value })}
+                    placeholder="https://open.spotify.com/playlist/... ou https://www.deezer.com/playlist/..."
+                    className="w-full bg-[#111] text-white px-4 py-3 rounded-xl border border-[#222] focus:border-streetiz-red outline-none"
+                  />
+                  <p className="text-xs text-[#666] mt-2">
+                    Partage ta playlist, ton track, ton album ou ton mix favori du moment
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-[#888] text-sm font-semibold mb-2">
+                    Type
+                  </label>
+                  <select
+                    value={profileData.music_type}
+                    onChange={(e) => setProfileData({ ...profileData, music_type: e.target.value })}
+                    className="w-full bg-[#111] text-white px-4 py-3 rounded-xl border border-[#222] focus:border-streetiz-red outline-none"
+                  >
+                    <option value="Track">Track</option>
+                    <option value="Playlist">Playlist</option>
+                    <option value="Album">Album</option>
+                    <option value="Mix">Mix</option>
+                  </select>
+                </div>
               </div>
             </div>
           </div>
