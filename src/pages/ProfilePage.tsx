@@ -475,57 +475,6 @@ export default function ProfilePage({ profileId: propProfileId, onClose, onOpenC
                 backgroundPosition: 'center'
               } : {}}
             >
-              <div className="absolute top-4 right-4 flex items-center gap-2.5 z-30">
-                {isOwnProfile ? (
-                  <>
-                    <LibreTonightButton
-                      userId={profile.id}
-                      isOwnProfile={isOwnProfile}
-                      availableTonight={profile.available_tonight}
-                      tonightLocationType={profile.tonight_location_type}
-                      tonightLocationValue={profile.tonight_location_value}
-                      availableTonightUpdatedAt={profile.available_tonight_updated_at}
-                      onUpdate={() => {
-                        if (username) {
-                          loadProfileByUsername();
-                        } else if (profileId) {
-                          loadProfile();
-                        }
-                      }}
-                    />
-                    <button
-                      onClick={() => setShowEditModal(true)}
-                      className="px-6 py-2.5 bg-gradient-to-r from-streetiz-red to-red-600 hover:from-red-600 hover:to-streetiz-red text-white rounded-full font-bold transition-all flex items-center gap-2 shadow-lg"
-                    >
-                      <Edit className="w-4 h-4" />
-                      Edit Profile
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    {profile.available_tonight && (
-                      <LibreTonightBadge
-                        locationType={profile.tonight_location_type}
-                        locationValue={profile.tonight_location_value}
-                        updatedAt={profile.available_tonight_updated_at}
-                      />
-                    )}
-                    {user && (
-                      <ProfileOptionsMenu
-                        targetUserId={profile.id}
-                        targetUsername={profile.username}
-                        isBlocked={isBlocked}
-                        onAddContact={handleAddContact}
-                        onShareProfile={handleShareProfile}
-                        onSendPrivateAlbum={() => setShowPrivateAlbumModal(true)}
-                        onSendPortfolio={() => setShowPortfolioModal(true)}
-                        onBlock={handleBlock}
-                        onReport={() => setShowReportModal(true)}
-                      />
-                    )}
-                  </>
-                )}
-              </div>
             </div>
 
             <div className="px-8 pb-8">
@@ -545,56 +494,103 @@ export default function ProfilePage({ profileId: propProfileId, onClose, onOpenC
                 </div>
 
                 <div className="flex gap-3 mt-4 md:mt-0">
-                  {!isOwnProfile && user && (
+                  {isOwnProfile ? (
                     <>
+                      <LibreTonightButton
+                        userId={profile.id}
+                        isOwnProfile={isOwnProfile}
+                        availableTonight={profile.available_tonight}
+                        tonightLocationType={profile.tonight_location_type}
+                        tonightLocationValue={profile.tonight_location_value}
+                        availableTonightUpdatedAt={profile.available_tonight_updated_at}
+                        onUpdate={() => {
+                          if (username) {
+                            loadProfileByUsername();
+                          } else if (profileId) {
+                            loadProfile();
+                          }
+                        }}
+                      />
                       <button
-                        onClick={handleFollow}
-                        className={`px-6 py-3 rounded-full font-bold transition-all ${
-                          isFollowing
-                            ? 'bg-[#222] text-white hover:bg-[#333]'
-                            : 'bg-streetiz-red text-white hover:bg-red-600'
-                        }`}
+                        onClick={() => setShowEditModal(true)}
+                        className="px-6 py-2.5 bg-gradient-to-r from-streetiz-red to-red-600 hover:from-red-600 hover:to-streetiz-red text-white rounded-full font-bold transition-all flex items-center gap-2 shadow-lg"
                       >
-                        {isFollowing ? 'Following' : 'Follow'}
+                        <Edit className="w-4 h-4" />
+                        Edit Profile
                       </button>
-
-                      {friendshipStatus === 'none' && (
-                        <button
-                          onClick={handleAddFriend}
-                          className="px-6 py-3 bg-[#222] hover:bg-[#333] text-white rounded-full font-bold transition-all flex items-center gap-2"
-                        >
-                          <UserPlus className="w-4 h-4" />
-                          Add Friend
-                        </button>
+                    </>
+                  ) : (
+                    <>
+                      {profile.available_tonight && (
+                        <LibreTonightBadge
+                          locationType={profile.tonight_location_type}
+                          locationValue={profile.tonight_location_value}
+                          updatedAt={profile.available_tonight_updated_at}
+                        />
                       )}
+                      {user && (
+                        <>
+                          <ProfileOptionsMenu
+                            targetUserId={profile.id}
+                            targetUsername={profile.username}
+                            isBlocked={isBlocked}
+                            onAddContact={handleAddContact}
+                            onShareProfile={handleShareProfile}
+                            onSendPrivateAlbum={() => setShowPrivateAlbumModal(true)}
+                            onSendPortfolio={() => setShowPortfolioModal(true)}
+                            onBlock={handleBlock}
+                            onReport={() => setShowReportModal(true)}
+                          />
+                          <button
+                            onClick={handleFollow}
+                            className={`px-6 py-3 rounded-full font-bold transition-all ${
+                              isFollowing
+                                ? 'bg-[#222] text-white hover:bg-[#333]'
+                                : 'bg-streetiz-red text-white hover:bg-red-600'
+                            }`}
+                          >
+                            {isFollowing ? 'Following' : 'Follow'}
+                          </button>
 
-                      {friendshipStatus === 'pending' && (
-                        <button
-                          disabled
-                          className="px-6 py-3 bg-[#222] text-[#666] rounded-full font-bold flex items-center gap-2"
-                        >
-                          <UserCheck className="w-4 h-4" />
-                          Pending
-                        </button>
+                          {friendshipStatus === 'none' && (
+                            <button
+                              onClick={handleAddFriend}
+                              className="px-6 py-3 bg-[#222] hover:bg-[#333] text-white rounded-full font-bold transition-all flex items-center gap-2"
+                            >
+                              <UserPlus className="w-4 h-4" />
+                              Add Friend
+                            </button>
+                          )}
+
+                          {friendshipStatus === 'pending' && (
+                            <button
+                              disabled
+                              className="px-6 py-3 bg-[#222] text-[#666] rounded-full font-bold flex items-center gap-2"
+                            >
+                              <UserCheck className="w-4 h-4" />
+                              Pending
+                            </button>
+                          )}
+
+                          {friendshipStatus === 'accepted' && (
+                            <button
+                              disabled
+                              className="px-6 py-3 bg-green-500/20 text-green-400 rounded-full font-bold flex items-center gap-2"
+                            >
+                              <UserCheck className="w-4 h-4" />
+                              Friends
+                            </button>
+                          )}
+
+                          <button
+                            onClick={() => onOpenChat?.(profile.id, profile.username, profile.avatar_url)}
+                            className="px-6 py-3 bg-[#222] hover:bg-[#333] text-white rounded-full font-bold transition-all flex items-center gap-2"
+                          >
+                            <MessageCircle className="w-4 h-4" />
+                            Message
+                          </button>
+                        </>
                       )}
-
-                      {friendshipStatus === 'accepted' && (
-                        <button
-                          disabled
-                          className="px-6 py-3 bg-green-500/20 text-green-400 rounded-full font-bold flex items-center gap-2"
-                        >
-                          <UserCheck className="w-4 h-4" />
-                          Friends
-                        </button>
-                      )}
-
-                      <button
-                        onClick={() => onOpenChat?.(profile.id, profile.username, profile.avatar_url)}
-                        className="px-6 py-3 bg-[#222] hover:bg-[#333] text-white rounded-full font-bold transition-all flex items-center gap-2"
-                      >
-                        <MessageCircle className="w-4 h-4" />
-                        Message
-                      </button>
                     </>
                   )}
                 </div>
