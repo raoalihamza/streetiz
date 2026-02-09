@@ -11,7 +11,7 @@ import FeedPost from '../components/FeedPost';
 import Navigation from '../components/Navigation';
 import ProfileEditModal from '../components/ProfileEditModal';
 import UserAgenda from '../components/UserAgenda';
-import LibreTonightSheet from '../components/LibreTonightSheet';
+import LibreTonightButton from '../components/LibreTonightButton';
 import LibreTonightBadge from '../components/LibreTonightBadge';
 import ProfilePhotoGrid from '../components/ProfilePhotoGrid';
 import ProfileMusicPlaylist from '../components/ProfileMusicPlaylist';
@@ -48,18 +48,10 @@ interface Profile {
     other?: string;
   };
   created_at: string;
-  free_tonight?: boolean;
-  ltn_preferences?: string[];
-  ltn_location?: {
-    use_gps: boolean;
-    city?: string;
-    area?: string;
-    address?: string;
-    lat?: number;
-    lng?: number;
-  };
-  out_now?: boolean;
-  out_location?: string;
+  available_tonight?: boolean;
+  tonight_location_type?: string;
+  tonight_location_value?: string;
+  available_tonight_updated_at?: string;
 }
 
 interface Media {
@@ -110,7 +102,6 @@ export default function ProfilePage({ profileId: propProfileId, onClose, onOpenC
   const [showPrivateAlbumModal, setShowPrivateAlbumModal] = useState(false);
   const [showPortfolioModal, setShowPortfolioModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
-  const [showLTNSheet, setShowLTNSheet] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
   const [upcomingEvents, setUpcomingEvents] = useState<Array<{
     id: string;
@@ -505,18 +496,21 @@ export default function ProfilePage({ profileId: propProfileId, onClose, onOpenC
                 <div className="flex gap-3 mt-4 md:mt-0">
                   {isOwnProfile ? (
                     <>
-                      <button
-                        onClick={() => setShowLTNSheet(true)}
-                        className={`px-4 py-2.5 rounded-full font-bold text-sm transition-all flex items-center gap-2 ${
-                          profile.free_tonight
-                            ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/30'
-                            : 'bg-[#181818] text-white border border-[#333] hover:border-purple-500/50 hover:bg-[#222]'
-                        }`}
-                      >
-                        <Zap className={`w-4 h-4 ${profile.free_tonight ? 'animate-pulse' : ''}`} />
-                        <span>LTN</span>
-                        {profile.free_tonight && <span className="text-xs opacity-80">• Active</span>}
-                      </button>
+                      <LibreTonightButton
+                        userId={profile.id}
+                        isOwnProfile={isOwnProfile}
+                        availableTonight={profile.available_tonight}
+                        tonightLocationType={profile.tonight_location_type}
+                        tonightLocationValue={profile.tonight_location_value}
+                        availableTonightUpdatedAt={profile.available_tonight_updated_at}
+                        onUpdate={() => {
+                          if (username) {
+                            loadProfileByUsername();
+                          } else if (profileId) {
+                            loadProfile();
+                          }
+                        }}
+                      />
                       <button
                         onClick={() => setShowEditModal(true)}
                         className="px-6 py-2.5 bg-gradient-to-r from-streetiz-red to-red-600 hover:from-red-600 hover:to-streetiz-red text-white rounded-full font-bold transition-all flex items-center gap-2 shadow-lg"
@@ -527,10 +521,11 @@ export default function ProfilePage({ profileId: propProfileId, onClose, onOpenC
                     </>
                   ) : (
                     <>
-                      {profile.free_tonight && (
+                      {profile.available_tonight && (
                         <LibreTonightBadge
-                          locationValue={profile.out_location || undefined}
-                          preferences={profile.ltn_preferences}
+                          locationType={profile.tonight_location_type}
+                          locationValue={profile.tonight_location_value}
+                          updatedAt={profile.available_tonight_updated_at}
                         />
                       )}
                       {user && (
@@ -724,11 +719,11 @@ export default function ProfilePage({ profileId: propProfileId, onClose, onOpenC
                   </div>
                 )}
 
-                {!isOwnProfile && profile.free_tonight && (
+                {!isOwnProfile && profile.available_tonight && (
                   <div className="flex items-center gap-4 pt-4 border-t border-[#222]">
                     <LibreTonightBadge
-                      locationValue={profile.out_location || undefined}
-                      preferences={profile.ltn_preferences}
+                      locationValue={profile.tonight_location_value}
+                      updatedAt={profile.available_tonight_updated_at}
                       size="md"
                     />
                   </div>
@@ -991,20 +986,6 @@ export default function ProfilePage({ profileId: propProfileId, onClose, onOpenC
           onReported={() => {
             alert('Signalement envoyé. Notre équipe va examiner ce profil.');
             setShowReportModal(false);
-          }}
-        />
-      )}
-
-      {showLTNSheet && (
-        <LibreTonightSheet
-          onClose={() => setShowLTNSheet(false)}
-          onUpdate={() => {
-            if (username) {
-              loadProfileByUsername();
-            } else if (profileId) {
-              loadProfile();
-            }
-            setShowLTNSheet(false);
           }}
         />
       )}
