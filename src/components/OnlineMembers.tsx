@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { MessageCircle, Users as UsersIcon } from 'lucide-react';
-import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { useQueryOnlineMembers } from '../hooks';
 import LibreTonightBadge from './LibreTonightBadge';
 
 interface OnlineMember {
@@ -22,53 +22,27 @@ interface OnlineMembersProps {
 
 export default function OnlineMembers({ onViewProfile, onOpenChat }: OnlineMembersProps) {
   const { user } = useAuth();
-  const [members, setMembers] = useState<OnlineMember[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadOnlineMembers();
-    const interval = setInterval(loadOnlineMembers, 20000);
-    return () => clearInterval(interval);
-  }, []);
+  // REACT QUERY: Optimized with caching and reduced refetch interval (5min instead of 20s)
+  // Reduces API calls from 180/hour to 12/hour (93% reduction)
+  const { data: onlineMembersData, isLoading: loading } = useQueryOnlineMembers();
 
-  const loadOnlineMembers = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select(`
-          id,
-          username,
-          display_name,
-          avatar_url,
-          free_tonight,
-          out_location,
-          ltn_preferences,
-          online_status
-        `)
-        .eq('online_status', 'online')
-        .limit(30);
+  // Filter out current user and format data
+  const members = useMemo(() => {
+    if (!onlineMembersData) return [];
 
-      if (error) throw error;
-
-      const onlineMembers = (data || [])
-        .filter((member: any) => member.id !== user?.id)
-        .map((member: any) => ({
-          id: member.id,
-          username: member.username,
-          display_name: member.display_name,
-          avatar_url: member.avatar_url,
-          free_tonight: member.free_tonight,
-          out_location: member.out_location,
-          ltn_preferences: member.ltn_preferences,
-        }));
-
-      setMembers(onlineMembers);
-    } catch (error) {
-      console.error('Error loading online members:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    return onlineMembersData
+      .filter((member: any) => member.id !== user?.id)
+      .map((member: any) => ({
+        id: member.id,
+        username: member.username,
+        display_name: member.display_name,
+        avatar_url: member.avatar_url,
+        free_tonight: member.profile_extensions?.[0]?.free_tonight,
+        out_location: member.profile_extensions?.[0]?.out_location,
+        ltn_preferences: member.profile_extensions?.[0]?.ltn_preferences,
+      }));
+  }, [onlineMembersData, user?.id]);
 
   const getCategoryColor = (type?: string) => {
     switch (type) {

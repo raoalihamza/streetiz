@@ -60,12 +60,26 @@ export default function MarketplaceItemModal({ itemId, onClose }: MarketplaceIte
 
   const incrementViews = async () => {
     try {
-      const { error } = await supabase
-        .from('marketplace_items')
-        .update({ views_count: supabase.sql`views_count + 1` })
-        .eq('id', itemId);
+      // FIXED: Use RPC instead of invalid supabase.sql
+      const { error } = await supabase.rpc('increment_marketplace_views', {
+        item_id: itemId,
+      });
 
-      if (error) console.error('Error incrementing views:', error);
+      if (error) {
+        // Fallback: If RPC doesn't exist, use simple update
+        const { data: current } = await supabase
+          .from('marketplace_items')
+          .select('views_count')
+          .eq('id', itemId)
+          .single();
+
+        if (current) {
+          await supabase
+            .from('marketplace_items')
+            .update({ views_count: (current.views_count || 0) + 1 })
+            .eq('id', itemId);
+        }
+      }
     } catch (error) {
       console.error('Error incrementing views:', error);
     }

@@ -60,12 +60,26 @@ export default function CastingDetailModal({ castingId, onClose }: CastingDetail
 
   const incrementViews = async () => {
     try {
-      const { error } = await supabase
-        .from('castings_jobs')
-        .update({ views_count: supabase.sql`views_count + 1` })
-        .eq('id', castingId);
+      // FIXED: Use RPC instead of invalid supabase.sql
+      const { error } = await supabase.rpc('increment_casting_views', {
+        casting_id: castingId,
+      });
 
-      if (error) console.error('Error incrementing views:', error);
+      if (error) {
+        // Fallback: If RPC doesn't exist, use simple update
+        const { data: current } = await supabase
+          .from('castings_jobs')
+          .select('views_count')
+          .eq('id', castingId)
+          .single();
+
+        if (current) {
+          await supabase
+            .from('castings_jobs')
+            .update({ views_count: (current.views_count || 0) + 1 })
+            .eq('id', castingId);
+        }
+      }
     } catch (error) {
       console.error('Error incrementing views:', error);
     }

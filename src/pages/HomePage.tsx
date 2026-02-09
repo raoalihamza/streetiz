@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Play, ArrowRight, ChevronLeft, ChevronRight, Flame, Video, TrendingUp, Clock, Eye, Calendar } from 'lucide-react';
+import { NewsService } from '../services';
 import { supabase } from '../lib/supabase';
 import BreakingNews from '../components/BreakingNews';
 import AudioPlayer from '../components/AudioPlayer';
@@ -71,34 +72,23 @@ export default function HomePage({ onNavigate }: HomePageProps) {
 
   const loadContent = async () => {
     try {
-      const [newsRes, videosRes, postsRes] = await Promise.all([
-        supabase
-          .from('news')
-          .select('*')
-          .eq('status', 'published')
-          .order('published_at', { ascending: false })
-          .limit(6),
+      // OPTIMIZED: Single query for all news instead of two separate queries
+      const [allNews, videosRes] = await Promise.all([
+        NewsService.getAll(),
         supabase
           .from('videos')
           .select('*')
           .eq('status', 'published')
           .order('created_at', { ascending: false })
           .limit(4),
-        supabase
-          .from('news')
-          .select('*')
-          .eq('status', 'published')
-          .order('published_at', { ascending: false })
-          .limit(12),
       ]);
 
-      if (newsRes.data) setFeaturedNews(newsRes.data);
-      if (videosRes.data) setLatestVideos(videosRes.data);
-      if (postsRes.data) {
-        const featuredIds = newsRes.data?.map(n => n.id) || [];
-        const filteredPosts = postsRes.data.filter(p => !featuredIds.includes(p.id)).slice(0, 9);
-        setLatestPosts(filteredPosts);
+      if (allNews) {
+        // Split news into featured (first 6) and latest posts (remaining 9)
+        setFeaturedNews(allNews.slice(0, 6));
+        setLatestPosts(allNews.slice(6, 15));
       }
+      if (videosRes.data) setLatestVideos(videosRes.data);
     } catch (error) {
       console.error('Error loading content:', error);
     } finally {

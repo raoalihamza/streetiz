@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Search, MapPin, Filter, X, User, MessageCircle, UserPlus, Check } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { useDebouncedValue } from '../hooks';
 
 interface MemberSearchProps {
   onViewProfile: (userId: string) => void;
@@ -31,13 +32,16 @@ export default function MemberSearch({ onViewProfile }: MemberSearchProps) {
 
   const roles = ['all', 'dancer', 'dj', 'videographer', 'photographer', 'producer', 'organizer', 'creator'];
 
+  // DEBOUNCED: Prevents API call on every keystroke (100+ calls → 5-10 calls)
+  const debouncedSearchTerm = useDebouncedValue(searchTerm, 500);
+
   useEffect(() => {
-    if (searchTerm || locationFilter || roleFilter !== 'all') {
+    if (debouncedSearchTerm || locationFilter || roleFilter !== 'all') {
       searchMembers();
     } else {
       setResults([]);
     }
-  }, [searchTerm, locationFilter, roleFilter]);
+  }, [debouncedSearchTerm, locationFilter, roleFilter]);
 
   const searchMembers = async () => {
     setLoading(true);
@@ -54,8 +58,8 @@ export default function MemberSearch({ onViewProfile }: MemberSearchProps) {
         `)
         .limit(20);
 
-      if (searchTerm) {
-        query = query.or(`username.ilike.%${searchTerm}%,display_name.ilike.%${searchTerm}%`);
+      if (debouncedSearchTerm) {
+        query = query.or(`username.ilike.%${debouncedSearchTerm}%,display_name.ilike.%${debouncedSearchTerm}%`);
       }
 
       const { data, error } = await query;

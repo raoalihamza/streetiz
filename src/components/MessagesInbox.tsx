@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Search, MessageCircle, Send, MoreVertical, Check, CheckCheck, Circle } from 'lucide-react';
+import { MessagesService } from '../services';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -50,34 +51,25 @@ export default function MessagesInbox({ onViewProfile }: MessagesInboxProps) {
   useEffect(() => {
     if (!user || !selectedConversation) return;
 
-    const channel = supabase
-      .channel(`messages:${selectedConversation}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-          filter: `conversation_id=eq.${selectedConversation}`,
-        },
-        (payload) => {
-          const newMsg = payload.new as any;
-          if (newMsg.sender_id !== user.id) {
-            const formattedMessage: Message = {
-              id: newMsg.id,
-              sender_id: newMsg.sender_id,
-              content: newMsg.content,
-              created_at: newMsg.created_at,
-              read: false,
-            };
-            setMessages((prev) => [...prev, formattedMessage]);
-          }
+    // OPTIMIZED: Use MessagesService for real-time subscription
+    const channel = MessagesService.subscribeToConversation(
+      selectedConversation,
+      (newMsg) => {
+        if (newMsg.sender_id !== user.id) {
+          const formattedMessage: Message = {
+            id: newMsg.id,
+            sender_id: newMsg.sender_id,
+            content: newMsg.content,
+            created_at: newMsg.created_at,
+            read: false,
+          };
+          setMessages((prev) => [...prev, formattedMessage]);
         }
-      )
-      .subscribe();
+      }
+    );
 
     return () => {
-      supabase.removeChannel(channel);
+      MessagesService.unsubscribeFromConversation(channel);
     };
   }, [user, selectedConversation]);
 

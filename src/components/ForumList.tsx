@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { MessageSquare, Eye, CheckCircle, Clock, TrendingUp } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { ForumService } from '../services';
 
 interface ForumTopic {
   id: string;
@@ -35,28 +35,21 @@ export default function ForumList({ onTopicClick, sortBy }: ForumListProps) {
   const loadTopics = async () => {
     setLoading(true);
     try {
-      let query = supabase
-        .from('forum_topics')
-        .select(`
-          *,
-          profiles:user_id (
-            username,
-            avatar_url
-          )
-        `);
+      // OPTIMIZED: Use ForumService instead of direct supabase call
+      const data = await ForumService.getAll();
+
+      // Client-side filtering and sorting based on sortBy
+      let filteredTopics = data || [];
 
       if (sortBy === 'recent') {
-        query = query.order('created_at', { ascending: false });
+        filteredTopics.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
       } else if (sortBy === 'popular') {
-        query = query.order('replies_count', { ascending: false });
+        filteredTopics.sort((a, b) => (b.replies_count || 0) - (a.replies_count || 0));
       } else if (sortBy === 'unresolved') {
-        query = query.eq('is_resolved', false).order('created_at', { ascending: false });
+        filteredTopics = filteredTopics.filter((topic: any) => !topic.is_resolved);
       }
 
-      const { data, error } = await query.limit(50);
-
-      if (error) throw error;
-      setTopics(data || []);
+      setTopics(filteredTopics.slice(0, 50));
     } catch (error) {
       console.error('Error loading topics:', error);
     } finally {

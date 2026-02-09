@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Heart, MessageCircle, UserPlus, FileText, Radio } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { useQueryPosts, useQueryOnlineMembers } from '../hooks';
 
 interface Activity {
   id: string;
@@ -19,75 +19,48 @@ interface ActivityFeedProps {
 
 export default function ActivityFeed({ onViewProfile }: ActivityFeedProps) {
   const [activities, setActivities] = useState<Activity[]>([]);
-  const [loading, setLoading] = useState(true);
+
+  // REACT QUERY: Automatic caching, deduplication, and background refetching
+  const { data: postsData, isLoading: postsLoading } = useQueryPosts();
+  const { data: onlineMembers, isLoading: membersLoading } = useQueryOnlineMembers();
+
+  const loading = postsLoading || membersLoading;
 
   useEffect(() => {
-    loadActivities();
-    const interval = setInterval(loadActivities, 30000);
-    return () => clearInterval(interval);
-  }, []);
+    if (!postsData && !onlineMembers) return;
 
-  const loadActivities = async () => {
-    try {
-      const { data: postsData } = await supabase
-        .from('posts')
-        .select(`
-          id,
-          user_id,
-          created_at,
-          profiles (username, display_name, avatar_url)
-        `)
-        .order('created_at', { ascending: false })
-        .limit(10);
+    const newActivities: Activity[] = [];
 
-      const { data: onlineData } = await supabase
-        .from('profiles')
-        .select(`
-          id,
-          username,
-          display_name,
-          avatar_url,
-          profile_extensions (online_status, last_seen)
-        `)
-        .limit(20);
-
-      const activities: Activity[] = [];
-
-      (postsData || []).forEach((post: any) => {
-        activities.push({
-          id: `post-${post.id}`,
-          type: 'post',
-          user_id: post.user_id,
-          username: post.profiles.username,
-          display_name: post.profiles.display_name,
-          avatar_url: post.profiles.avatar_url,
-          created_at: post.created_at,
-        });
+    // Add recent posts to activities
+    (postsData || []).slice(0, 10).forEach((post: any) => {
+      newActivities.push({
+        id: `post-${post.id}`,
+        type: 'post',
+        user_id: post.user_id,
+        username: post.profiles?.username || 'Unknown',
+        display_name: post.profiles?.display_name || null,
+        avatar_url: post.profiles?.avatar_url || null,
+        created_at: post.created_at,
       });
+    });
 
-      (onlineData || [])
-        .filter((user: any) => user.profile_extensions?.[0]?.online_status === 'online')
-        .forEach((user: any) => {
-          activities.push({
-            id: `online-${user.id}`,
-            type: 'online',
-            user_id: user.id,
-            username: user.username,
-            display_name: user.display_name,
-            avatar_url: user.avatar_url,
-            created_at: user.profile_extensions[0].last_seen || new Date().toISOString(),
-          });
-        });
+    // Add online members to activities
+    (onlineMembers || []).forEach((user: any) => {
+      newActivities.push({
+        id: `online-${user.id}`,
+        type: 'online',
+        user_id: user.id,
+        username: user.username,
+        display_name: user.display_name,
+        avatar_url: user.avatar_url,
+        created_at: user.profile_extensions?.[0]?.last_seen || new Date().toISOString(),
+      });
+    });
 
-      activities.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
-      setActivities(activities.slice(0, 15));
-    } catch (error) {
-      console.error('Error loading activities:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    // Sort by date and limit to 15
+    newActivities.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    setActivities(newActivities.slice(0, 15));
+  }, [postsData, onlineMembers]);
 
   const getActivityIcon = (type: string) => {
     switch (type) {

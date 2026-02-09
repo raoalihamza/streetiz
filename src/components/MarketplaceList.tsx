@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { MapPin, Eye, Tag } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { MarketplaceService } from '../services';
 
 interface MarketplaceItem {
   id: string;
@@ -35,26 +35,15 @@ export default function MarketplaceList({ onItemClick, category }: MarketplaceLi
   const loadItems = async () => {
     setLoading(true);
     try {
-      let query = supabase
-        .from('marketplace_items')
-        .select(`
-          *,
-          profiles:seller_id (
-            username,
-            avatar_url
-          )
-        `)
-        .eq('status', 'available')
-        .order('created_at', { ascending: false });
-
-      if (category !== 'all') {
-        query = query.eq('category', category);
+      // OPTIMIZED: Use MarketplaceService instead of direct supabase call
+      let data;
+      if (category === 'all') {
+        data = await MarketplaceService.getAll();
+      } else {
+        data = await MarketplaceService.getByCategory(category);
       }
 
-      const { data, error } = await query.limit(50);
-
-      if (error) throw error;
-      setItems(data || []);
+      setItems((data || []).slice(0, 50));
     } catch (error) {
       console.error('Error loading items:', error);
     } finally {

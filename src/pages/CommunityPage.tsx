@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Plus, MessageSquare, ShoppingBag, Briefcase, FileText, MapPin, ChevronDown,
@@ -6,6 +6,8 @@ import {
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { useQueryCommunityFeed, useQueryFollowerCounts, useQueryFriends } from '../hooks';
+import { useQueryClient } from '@tanstack/react-query';
 import FeedPost from '../components/FeedPost';
 import SeedDataButton from '../components/SeedDataButton';
 import MemberSearch from '../components/MemberSearch';
@@ -81,14 +83,49 @@ type FeedTab = 'global' | 'following' | 'recommended' | 'trending' | 'messages';
 export default function CommunityPage({ onNavigate }: CommunityPageProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [friends, setFriends] = useState<Friend[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [selectedCategory, setSelectedCategory] = useState<CategoryType>('posts');
   const [selectedFeedTab, setSelectedFeedTab] = useState<FeedTab>('global');
   const [showCreateMenu, setShowCreateMenu] = useState(false);
   const [createModalType, setCreateModalType] = useState<'post' | 'forum' | 'announcement' | 'marketplace' | 'workshop' | null>(null);
   const [openChats, setOpenChats] = useState<Array<{ id: string; name: string; avatar: string | null }>>([]);
+
+  // REACT QUERY: Optimized feed data fetching with caching and deduplication
+  const { data: feedData, isLoading: feedLoading } = useQueryCommunityFeed(user?.id, selectedFeedTab);
+  const { data: friendsData, isLoading: friendsLoading } = useQueryFriends(user?.id || '');
+
+  // Extract user IDs for batched follower count query
+  const userIds = useMemo(() => {
+    return (feedData?.posts || []).map((post: any) => post.profiles?.id).filter(Boolean);
+  }, [feedData]);
+
+  // REACT QUERY: Batch follower counts (eliminates 50+ individual API calls)
+  const { data: followerCounts } = useQueryFollowerCounts(userIds);
+
+  // Process posts with user likes/saves flags
+  const posts = useMemo(() => {
+    if (!feedData) return [];
+
+    const { posts, likedPostIds, savedPostIds } = feedData;
+    return posts.map((p: any) => ({
+      ...p,
+      user_liked: likedPostIds.includes(p.id),
+      user_saved: savedPostIds.includes(p.id),
+    }));
+  }, [feedData]);
+
+  const friends = useMemo(() => {
+    if (!friendsData) return [];
+    return friendsData.map((f: any) => ({
+      id: f.profiles?.id || f.friend?.id,
+      username: f.profiles?.username || f.friend?.username,
+      display_name: f.profiles?.display_name || f.friend?.display_name,
+      avatar_url: f.profiles?.avatar_url || f.friend?.avatar_url,
+      online_status: f.profiles?.profile_extensions?.[0]?.online_status || 'offline',
+    }));
+  }, [friendsData]);
+
+  const loading = feedLoading || friendsLoading;
 
   const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
   const [selectedMarketplaceItemId, setSelectedMarketplaceItemId] = useState<string | null>(null);
@@ -116,112 +153,7 @@ export default function CommunityPage({ onNavigate }: CommunityPageProps) {
     }
   };
 
-  useEffect(() => {
-    if (selectedCategory === 'posts') {
-      loadPosts();
-    }
-    if (user) {
-      loadFriends();
-    }
-  }, [user, selectedCategory, selectedFeedTab]);
-
-  const loadPosts = async () => {
-    setLoading(true);
-    try {
-      let query = supabase
-        .from('posts')
-        .select(`
-          *,
-          profiles (id, username, display_name, avatar_url)
-        `)
-        .order('created_at', { ascending: false })
-        .limit(50);
-
-      if (selectedFeedTab === 'following' && user) {
-        const { data: followsData } = await supabase
-          .from('user_follows')
-          .select('following_id')
-          .eq('follower_id', user.id);
-
-        const followingIds = (followsData || []).map((f: any) => f.following_id);
-        if (followingIds.length > 0) {
-          query = query.in('user_id', followingIds);
-        } else {
-          setPosts([]);
-          setLoading(false);
-          return;
-        }
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-
-      if (user) {
-        const postIds = (data || []).map((p: any) => p.id);
-
-        const { data: likes } = await supabase
-          .from('post_likes')
-          .select('post_id')
-          .eq('user_id', user.id)
-          .in('post_id', postIds);
-
-        const { data: saves } = await supabase
-          .from('post_saves')
-          .select('post_id')
-          .eq('user_id', user.id)
-          .in('post_id', postIds);
-
-        const likedPostIds = new Set((likes || []).map((l: any) => l.post_id));
-        const savedPostIds = new Set((saves || []).map((s: any) => s.post_id));
-
-        setPosts((data || []).map((p: any) => ({
-          ...p,
-          user_liked: likedPostIds.has(p.id),
-          user_saved: savedPostIds.has(p.id)
-        })));
-      } else {
-        setPosts(data || []);
-      }
-    } catch (error) {
-      console.error('Error loading posts:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadFriends = async () => {
-    if (!user) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('friendships')
-        .select(`
-          friend_id,
-          profiles!friendships_friend_id_fkey (
-            id, username, display_name, avatar_url,
-            profile_extensions (online_status)
-          )
-        `)
-        .eq('user_id', user.id)
-        .eq('status', 'accepted')
-        .limit(10);
-
-      if (error) throw error;
-
-      const formattedFriends = (data || []).map((f: any) => ({
-        id: f.profiles.id,
-        username: f.profiles.username,
-        display_name: f.profiles.display_name,
-        avatar_url: f.profiles.avatar_url,
-        online_status: f.profiles.profile_extensions?.[0]?.online_status || 'offline'
-      }));
-
-      setFriends(formattedFriends);
-    } catch (error) {
-      console.error('Error loading friends:', error);
-    }
-  };
+  // No longer need useEffect, loadPosts, or loadFriends - React Query handles it all automatically!
 
   const handleLike = async (postId: string) => {
     if (!user) return;
@@ -246,14 +178,13 @@ export default function CommunityPage({ onNavigate }: CommunityPageProps) {
         await supabase.rpc('increment_post_likes', { post_id: postId });
       }
 
-      setPosts(posts.map(p =>
-        p.id === postId
-          ? { ...p, user_liked: !p.user_liked, likes_count: p.likes_count + (p.user_liked ? -1 : 1) }
-          : p
-      ));
+      // Invalidate React Query cache to refetch updated data
+      queryClient.invalidateQueries({ queryKey: ['community', 'feed'] });
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
     } catch (error) {
       console.error('Error toggling like:', error);
-      await loadPosts();
+      // Auto-refetch on error
+      queryClient.invalidateQueries({ queryKey: ['community', 'feed'] });
     }
   };
 
@@ -276,9 +207,8 @@ export default function CommunityPage({ onNavigate }: CommunityPageProps) {
           .insert({ post_id: postId, user_id: user.id });
       }
 
-      setPosts(posts.map(p =>
-        p.id === postId ? { ...p, user_saved: !p.user_saved } : p
-      ));
+      // Invalidate React Query cache to refetch updated data
+      queryClient.invalidateQueries({ queryKey: ['community', 'feed'] });
     } catch (error) {
       console.error('Error toggling save:', error);
     }
@@ -334,12 +264,12 @@ export default function CommunityPage({ onNavigate }: CommunityPageProps) {
 
   return (
     <div className="min-h-screen bg-[#0D0D0D] pt-20">
-      <div className="max-w-[1900px] mx-auto px-4 lg:px-6">
-        <div className="grid grid-cols-1 lg:grid-cols-[320px_minmax(0,800px)] xl:grid-cols-[320px_minmax(0,800px)_360px] gap-6 justify-center">
+      <div className="max-w-[1900px] mx-auto px-4 lg:px-6 py-4">
+        <div className="grid grid-cols-1 lg:grid-cols-[320px_minmax(0,800px)] xl:grid-cols-[320px_minmax(0,800px)_360px] gap-6 justify-center items-start">
 
-          {/* LEFT SIDEBAR */}
+          {/* LEFT SIDEBAR - scrolls with page */}
           <aside className="hidden lg:block">
-            <div className="sticky top-24 space-y-4">
+            <div className="sticky top-24 space-y-4 max-h-[calc(100vh-120px)] overflow-y-auto scrollbar-hide">
               {user && <ProfileStatsWidget />}
 
               <div className="bg-[#111] rounded-2xl border border-[#222] overflow-hidden shadow-lg shadow-black/50">
@@ -441,8 +371,8 @@ export default function CommunityPage({ onNavigate }: CommunityPageProps) {
             </div>
           </aside>
 
-          {/* MAIN FEED */}
-          <main className="min-h-screen">
+          {/* MAIN FEED - independent scroll */}
+          <main className="max-h-[calc(100vh-120px)] overflow-y-auto scrollbar-hide sticky top-24">
             {selectedCategory === 'posts' && (
               <>
                 <div className="flex flex-wrap items-center gap-2 mb-6 bg-[#111] rounded-2xl p-2 border border-[#222] shadow-lg shadow-black/50">
@@ -535,6 +465,7 @@ export default function CommunityPage({ onNavigate }: CommunityPageProps) {
                         onSave={handleSave}
                         onViewProfile={handleViewProfile}
                         onMessage={handleOpenChat}
+                        followerCount={followerCounts?.[post.profiles?.id] || 0}
                       />
                     ))}
                   </div>
@@ -663,9 +594,9 @@ export default function CommunityPage({ onNavigate }: CommunityPageProps) {
             )}
           </main>
 
-          {/* RIGHT SIDEBAR */}
+          {/* RIGHT SIDEBAR - scrolls with page */}
           <aside className="hidden xl:block">
-            <div className="sticky top-24 space-y-4">
+            <div className="sticky top-24 space-y-4 max-h-[calc(100vh-120px)] overflow-y-auto scrollbar-hide">
               <OnlineMembers
                 onViewProfile={handleViewProfile}
                 onOpenChat={handleOpenChat}

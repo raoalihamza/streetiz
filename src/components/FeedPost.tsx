@@ -46,30 +46,18 @@ interface FeedPostProps {
   onViewProfile?: (userId: string) => void;
   onFollow?: (userId: string) => void;
   onMessage?: (userId: string, username: string, avatar: string | null) => void;
+  followerCount?: number; // OPTIMIZED: Accept batched follower count from parent
 }
 
-export default function FeedPost({ post, onLike, onComment, onShare, onSave, onViewProfile, onFollow, onMessage }: FeedPostProps) {
+export default function FeedPost({ post, onLike, onComment, onShare, onSave, onViewProfile, onFollow, onMessage, followerCount }: FeedPostProps) {
   const { user } = useAuth();
   const [showComments, setShowComments] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
-  const [followersCount, setFollowersCount] = useState<number>(0);
 
-  useEffect(() => {
-    loadFollowersCount();
-  }, [post.profiles.id]);
+  // OPTIMIZED: Use follower count from parent instead of individual API call
+  const followersCount = followerCount ?? 0;
 
-  const loadFollowersCount = async () => {
-    try {
-      const { count } = await supabase
-        .from('user_follows')
-        .select('*', { count: 'exact', head: true })
-        .eq('following_id', post.profiles.id);
-
-      setFollowersCount(count || 0);
-    } catch (error) {
-      console.error('Error loading followers count:', error);
-    }
-  };
+  // Removed individual API call - now uses batched data from CommunityPage
 
   const handleFollow = () => {
     if (onFollow && user) {
